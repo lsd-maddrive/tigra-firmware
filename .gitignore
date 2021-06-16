@@ -1,3 +1,7 @@
+#vscode settings
+/TigraLowLevelControl/build
+/TigraLowLevelControl/.vscode
+
 # Prerequisites
 *.d
 
