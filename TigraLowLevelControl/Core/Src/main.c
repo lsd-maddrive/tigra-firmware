@@ -549,13 +549,24 @@ void tcpReciveMessageTask(void const * argument)
 void driveControlTask(void const * argument)
 {
   /* USER CODE BEGIN driveControlTask */
+  float refSpeed=0;
+  PIDHandle_t PID=
+  {
+    .kp=1,
+    .ki=1,
+    .kd=1,
+    .integralSaturation=2000,
+    .controllerSaturation=4095,
+    .prevError=0,
+    .integralTerm=0
+  };
   HAL_DAC_Start(&hdac,DAC_CHANNEL_1);
   HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0);
   /* Infinite loop */
   for(;;)
   {
-    setDriveUnitSpeed(2000);
-    osDelay(1);
+    speedControlProcess(refSpeed,&PID);
+    osDelay(100);
   }
   /* USER CODE END driveControlTask */
 }

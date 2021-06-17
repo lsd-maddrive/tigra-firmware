@@ -2,6 +2,8 @@
 #define __DRIVE_CONTROL_H
 
 #include "stm32f7xx_hal.h"
+#include "speedMeasure.h"
+#include "math.h"
 
 typedef struct
 {
@@ -10,6 +12,19 @@ typedef struct
 }
 driveData_t;
 
+typedef struct
+{
+    float kp;
+    float ki;
+    float kd;
+    float prevError;
+    float integralTerm;
+    float controllerSaturation;
+    float integralSaturation;
+}PIDHandle_t;
+
 void setDriveUnitSpeed(int16_t angularSpeed);
- 
+void speedControlProcess(float refSpeed,PIDHandle_t* PID);
+float PIDController(PIDHandle_t * PID,float error);
+
 #endif
