@@ -49,11 +49,13 @@ TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim13;
 
 UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart3;
 
 osThreadId feedbackDataSenHandle;
 osThreadId tcpReciveMessagHandle;
 osThreadId driveControlHandle;
 osThreadId lightControlHandle;
+osThreadId hardwareTestHandle;
 osMessageQId driveDataHandle;
 /* USER CODE BEGIN PV */
 struct netif gnetif;
@@ -67,10 +69,12 @@ static void MX_USART1_UART_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_TIM13_Init(void);
+static void MX_USART3_UART_Init(void);
 void feedbackDataSendTask(void const * argument);
 void tcpReciveMessageTask(void const * argument);
 void driveControlTask(void const * argument);
 void lightControlTask(void const * argument);
+void hardwareTestTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -114,6 +118,7 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_TIM13_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   encoderStart(18);
   /* USER CODE END 2 */
@@ -155,6 +160,10 @@ int main(void)
   /* definition and creation of lightControl */
   osThreadDef(lightControl, lightControlTask, osPriorityHigh, 0, 512);
   lightControlHandle = osThreadCreate(osThread(lightControl), NULL);
+
+  /* definition and creation of hardwareTest */
+  osThreadDef(hardwareTest, hardwareTestTask, osPriorityAboveNormal, 0, 512);
+  hardwareTestHandle = osThreadCreate(osThread(hardwareTest), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -226,8 +235,9 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART1;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_USART3;
   PeriphClkInitStruct.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
+  PeriphClkInitStruct.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -437,6 +447,41 @@ static void MX_USART1_UART_Init(void)
 }
 
 /**
+  * @brief USART3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART3_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART3_Init 0 */
+
+  /* USER CODE END USART3_Init 0 */
+
+  /* USER CODE BEGIN USART3_Init 1 */
+
+  /* USER CODE END USART3_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 9600;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART3_Init 2 */
+
+  /* USER CODE END USART3_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -515,7 +560,6 @@ void feedbackDataSendTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    measSpeed=getSpeed();
     osDelay(100);
   }
   /* USER CODE END 5 */
@@ -565,7 +609,9 @@ void driveControlTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
+  #if !DRIVE_TEST
     speedControlProcess(refSpeed,&PID);
+  #endif
     osDelay(100);
   }
   /* USER CODE END driveControlTask */
@@ -587,6 +633,25 @@ void lightControlTask(void const * argument)
     osDelay(1);
   }
   /* USER CODE END lightControlTask */
+}
+
+/* USER CODE BEGIN Header_hardwareTestTask */
+/**
+* @brief Function implementing the hardwareTest thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_hardwareTestTask */
+void hardwareTestTask(void const * argument)
+{
+  /* USER CODE BEGIN hardwareTestTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    testProcess();
+
+  }
+  /* USER CODE END hardwareTestTask */
 }
 
  /**

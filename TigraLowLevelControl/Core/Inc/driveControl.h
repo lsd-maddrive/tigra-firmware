@@ -23,7 +23,6 @@ typedef struct
     float integralSaturation;
 }PIDHandle_t;
 
-void setDriveUnitSpeed(int16_t angularSpeed);
 void speedControlProcess(float refSpeed,PIDHandle_t* PID);
 float PIDController(PIDHandle_t * PID,float error);
 

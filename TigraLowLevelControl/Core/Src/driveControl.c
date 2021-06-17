@@ -8,11 +8,6 @@ float sign(float a){
 	else return 0;
 }
 
-void setDriveUnitSpeed(int16_t angularSpeed)
-{
-    HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,angularSpeed);
-}
-
 /**
  * @brief   Carries out speed regulation.
  * @param   refSpeed - speed reference value.

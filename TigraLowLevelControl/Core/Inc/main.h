@@ -46,6 +46,7 @@ extern "C" {
 
 #include "driveControl.h"
 #include "speedMeasure.h"
+#include "tests.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
