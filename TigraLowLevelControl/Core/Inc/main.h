@@ -45,7 +45,7 @@ extern "C" {
 #include "ethernetConf.h"
 
 #include "driveControl.h"
-
+#include "speedMeasure.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

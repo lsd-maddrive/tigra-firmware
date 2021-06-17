@@ -23,6 +23,7 @@
 #include "stm32f7xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "speedMeasure.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,6 +57,7 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim14;
 
 /* USER CODE BEGIN EV */
@@ -161,12 +163,34 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /**
+  * @brief This function handles TIM4 global interrupt.
+  */
+void TIM4_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM4_IRQn 0 */
+  if(TIM4->SR & TIM_SR_UIF)
+	{
+		TIM4->SR&=~TIM_SR_UIF;
+    encoderMeasureDate();
+	}
+  /* USER CODE END TIM4_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim4);
+  /* USER CODE BEGIN TIM4_IRQn 1 */
+
+  /* USER CODE END TIM4_IRQn 1 */
+}
+
+/**
   * @brief This function handles TIM8 trigger and commutation interrupts and TIM14 global interrupt.
   */
 void TIM8_TRG_COM_TIM14_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM8_TRG_COM_TIM14_IRQn 0 */
-
+  if(TIM13->SR & TIM_SR_UIF)
+	{
+	  TIM13->SR&=~TIM_SR_UIF;
+    encoderSetZeroSpeed();
+	}
   /* USER CODE END TIM8_TRG_COM_TIM14_IRQn 0 */
   HAL_TIM_IRQHandler(&htim14);
   /* USER CODE BEGIN TIM8_TRG_COM_TIM14_IRQn 1 */

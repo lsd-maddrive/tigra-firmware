@@ -1,70 +1,69 @@
 #include "speedMeasure.h"
 
-uint16_t encoderCount;
-uint8_t statusFlag=0;
-uint32_t speed;
 
-void TIM2_IRQHandler()
-{ 
-	if(TIM2->SR & TIM_SR_UIF)
-	{
-		TIM2->SR&=~TIM_SR_UIF;
-		if(statusFlag==0)
-		{
-			TIM5->CR1|=TIM_CR1_CEN;
-			statusFlag=1;
-		}
-		else
-		{
-			speed=TIM5->CNT;
-			TIM5->CR1&=~TIM_CR1_CEN;
-			statusFlag=0;
-			TIM5->CNT=0;		
-		}
-	}
-}
-	
-void TIM5_IRQHandler()
+static uint16_t encoderCount;
+static uint8_t statusFlag=0;
+static uint16_t encoderPeriod;
+static uint8_t direction;
+extern TIM_HandleTypeDef htim4;
+
+/**
+ * @brief   Starts the process of measuring the speed from the encoder
+ * @param   diveder - Sets the part of the period over which the speed is averaged
+ */
+void encoderStart(uint8_t diveder)
 {
-	if(TIM5->SR & TIM_SR_UIF)
+	TIM4->ARR=(ENCODER_STEP_COUNT/diveder)-1;
+	HAL_TIM_Encoder_Start_IT(&htim4, TIM_CHANNEL_ALL);
+}
+
+/**
+ * @brief   Called from interrupt. Measuring the time of a part of an encoder revolution.
+ */
+void encoderMeasureDate(void)
+{
+	if(statusFlag==0)
 	{
-		TIM5->SR&=~TIM_SR_UIF;
-		speed=0;
+		TIM13->CNT=0;		
+		TIM13->DIER|=TIM_DIER_UIE;
+		TIM13->CR1|=TIM_CR1_CEN;
+		statusFlag=1;
+	}
+	else
+	{
+		encoderPeriod=TIM13->CNT;
+		if(TIM4->CR1 & TIM_CR1_DIR)
+			direction=1;
+		else 
+			direction=0;
 		statusFlag=0;
-		TIM5->CR1&=~TIM_CR1_CEN;
-		TIM5->CNT=0;
 	}
 }
 
-void tim5Init()
+/**
+ * @brief   Called from interrupt. Sets zero speed and stops the measurement process.
+ */
+void encoderSetZeroSpeed(void)
 {
-	RCC->APB1ENR|=RCC_APB1ENR_TIM5EN;
-	TIM5->EGR|=TIM_EGR_UG;//!!Генерация update event для запись предделителя!!
-	TIM5->ARR=0xFFFFFFFF;
-	TIM5->DIER|=TIM_DIER_UIE;
-	NVIC_EnableIRQ(TIM5_IRQn);
+	encoderPeriod=0;
+	statusFlag=0;
+	TIM13->CR1&=~TIM_CR1_CEN;
+	TIM13->CNT=0;
 }
 
-void encoderInit(void)
+/**
+ * @brief	Returns the current speed.
+ */
+float getSpeed(void)
 {
-	RCC->AHB1ENR|=RCC_AHB1ENR_GPIOAEN;//Тактирование порта A
-	RCC->APB1ENR|=RCC_APB1ENR_TIM2EN;//Такстирование таймера 2
-    GPIOA->MODER|=GPIO_MODER_MODER0_1 | GPIO_MODER_MODER1_1;//PA0,PA1 в режим алдьтернативных функцияй
-	GPIOA->AFR[0]|=GPIO_AFRL_AFRL0_0 | GPIO_AFRL_AFRL1_0;//PA0,PA1 - AF1
-	GPIOA->PUPDR|=GPIO_PUPDR_PUPDR0_0 | GPIO_PUPDR_PUPDR1_0;//PA0,PA1 Pull up
-	tim5Init();
-	TIM2->CCER = TIM_CCER_CC1P | TIM_CCER_CC2P;//Инвертированный режим (по срезу)
-	TIM2->CCMR1 = TIM_CCMR1_CC1S_0 | TIM_CCMR1_CC2S_0;//Сконфигурировать CH0,CH1 для работы по триггеру
-	TIM2->SMCR = TIM_SMCR_SMS_1;//Режим энкодера по TI1
-	TIM2->CCMR1|=0x5<<TIM_CCMR1_IC1F_Pos | 0x5<<TIM_CCMR1_IC2F_Pos;//Настройка входных фильтров
-	//TIM2->ARR = (ENCODER_STEP_COUNT/18)-1;//Верхний предел счета
-    TIM2->ARR=0xFFFFFF;
-	TIM2->DIER|=TIM_DIER_UIE;//Включить прерывание по переполнению
-	NVIC_EnableIRQ(TIM2_IRQn);
-	TIM2->CR1|= TIM_CR1_CEN;//Старт таймера
-} 
-
-int32_t getSpeed(void)
-{
-    return speed;
+	float speed;
+	if(encoderPeriod!=0)
+	{
+		speed=(float)encoderPeriod/1000000;
+		speed=3.33/speed;
+		if(direction==1)
+			speed=-1*speed;
+		return speed;
+	}
+	return 0;
 }
