@@ -1,7 +1,34 @@
 #include "driveControl.h"
 
+static brakeStatus_t breakFlag=NO_BREAK;
 static float refSpeed;
+static float breakRefCurrent=BREAK_REF_CURRENT;
+
 extern DAC_HandleTypeDef hdac;
+extern ADC_HandleTypeDef hadc1;
+extern TIM_HandleTypeDef htim9;
+
+PIDHandle_t SpeedPID=
+  {
+    .kp=1,
+    .ki=1,
+    .kd=1,
+    .integralSaturation=2000,
+    .controllerSaturation=4095,
+    .prevError=0,
+    .integralTerm=0
+  };
+
+  PIDHandle_t breakCurrentPID=
+  {
+    .kp=1,
+    .ki=1,
+    .kd=1,
+    .integralSaturation=1000,
+    .controllerSaturation=2000,
+    .prevError=0,
+    .integralTerm=0
+  };
 
 float sign(float a){
 	if (a>0) return 1;
@@ -11,14 +38,74 @@ float sign(float a){
 
 /**
  * @brief   Carries out speed regulation.
- * @param   refSpeed - speed reference value.
- * @param   PID - structure with controller settings.
  */
-void speedControlProcess(PIDHandle_t* PID)
+void speedControlProcess(void)
 {
-    //TODO - add reverse and brake control system.
-    float controlImpact=PIDController(PID,refSpeed-getSpeed());
-    HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)controlImpact);
+    float controlImpact;
+    if(breakFlag==NO_BREAK)
+    {
+        controlImpact=PIDController(&SpeedPID,refSpeed-getSpeed());
+        if(controlImpact>=0)
+        {
+            HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
+            HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)controlImpact);
+        }
+        else
+        {
+            controlImpact=-1*controlImpact;
+            HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
+            HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)controlImpact);
+        }      
+    }
+    else
+    {
+        breakControl();
+    }   
+}
+
+/**
+ * @brief   Break control system.
+ */
+void breakControl(void)
+{
+    uint16_t current;
+    float controllBrakeDrive;
+    HAL_ADC_Start(&hadc1);
+    HAL_ADC_PollForConversion(&hadc1,100);
+    current=HAL_ADC_GetValue(&hadc1);
+    if(breakFlag==BREAK)
+    {
+        controllBrakeDrive=PIDController(&breakCurrentPID,(float)(breakRefCurrent-(float)current));
+        if(controllBrakeDrive>=0)
+        {
+            HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,0);
+            HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,1);
+            TIM9->CCR1=(uint16_t)controllBrakeDrive;
+        }
+        else if(controllBrakeDrive<0)
+        {
+            controllBrakeDrive=-1*controllBrakeDrive;
+            HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,1);
+            HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,0);
+            TIM9->CCR1=(uint16_t)controllBrakeDrive;
+        }
+        if(getSpeed()==0)
+        {
+            breakRefCurrent*=-1;
+        }
+    }
+
+}
+
+/**
+ * @brief   release the brakes when the limit switch is triggered.
+ */
+void breakRealise(void)
+{
+    TIM9->CCR1=0;
+    HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,0);
+    HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,0);
+    breakFlag=NO_BREAK;
 }
 
 /**
@@ -46,5 +133,8 @@ float PIDController(PIDHandle_t * PID,float error)
  */
 void setReferenceSpeed(float speed)
 {
+    if(sign(speed)!=sign(refSpeed))
+        breakFlag=BREAK;
     refSpeed=speed;
 }
+

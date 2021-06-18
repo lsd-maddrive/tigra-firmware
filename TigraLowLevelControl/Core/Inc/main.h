@@ -73,6 +73,8 @@ typedef struct
 
 /* USER CODE END EM */
 
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -81,8 +83,15 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define Brake_Pin GPIO_PIN_13
-#define Brake_GPIO_Port GPIOB
+#define DRIVE_REVERSE_Pin GPIO_PIN_2
+#define DRIVE_REVERSE_GPIO_Port GPIOE
+#define BREAK_DIRECTION_R_Pin GPIO_PIN_3
+#define BREAK_DIRECTION_R_GPIO_Port GPIOE
+#define BREAK_DIRECTION_L_Pin GPIO_PIN_4
+#define BREAK_DIRECTION_L_GPIO_Port GPIOE
+#define BREAK_LOW_Pin GPIO_PIN_0
+#define BREAK_LOW_GPIO_Port GPIOF
+#define BREAK_LOW_EXTI_IRQn EXTI0_IRQn
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
