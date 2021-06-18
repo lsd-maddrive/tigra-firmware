@@ -1,5 +1,6 @@
 #include "driveControl.h"
 
+static float refSpeed;
 extern DAC_HandleTypeDef hdac;
 
 float sign(float a){
@@ -13,10 +14,10 @@ float sign(float a){
  * @param   refSpeed - speed reference value.
  * @param   PID - structure with controller settings.
  */
-void speedControlProcess(float refSpeed,PIDHandle_t* PID)
+void speedControlProcess(PIDHandle_t* PID)
 {
     //TODO - add reverse and brake control system.
-    float controlImpact=PIDController(PID,getSpeed());
+    float controlImpact=PIDController(PID,refSpeed-getSpeed());
     HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)controlImpact);
 }
 
@@ -37,4 +38,13 @@ float PIDController(PIDHandle_t * PID,float error)
     if(fabs(controllerOut)>PID->controllerSaturation)
         controllerOut=sign(controllerOut)*PID->controllerSaturation;
     return controllerOut;
+}
+
+/**
+ * @brief   Reference speed set function.
+ * @param   speed - reference speed.
+ */
+void setReferenceSpeed(float speed)
+{
+    refSpeed=speed;
 }

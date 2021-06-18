@@ -3,7 +3,7 @@
 extern UART_HandleTypeDef huart3;
 extern DAC_HandleTypeDef hdac;
 
-uint16_t pow(uint16_t num,uint16_t pow)
+uint16_t powINT(uint16_t num,uint16_t pow)
 {
   uint16_t i,rez=1;
   for(i=1;i<=pow;i++)
@@ -18,14 +18,20 @@ uint16_t pow(uint16_t num,uint16_t pow)
  */
 void testProcess(void)
 {
+    static uint16_t counter;
 #if ENCODER_TEST
-    encoderTest(); 
-    osDelay(500);   
+    if(counter>50)
+    {
+        counter=0;
+        encoderTest(); 
+    } 
+    else
+        counter++;
 #endif
 #if DRIVE_TEST
     driveTest();
-    osDelay(10);
 #endif
+    osDelay(10);
 }
 
 /**
@@ -57,7 +63,7 @@ void driveTest(void)
     uint32_t DACValue=0;
     uint8_t direction;
     HAL_StatusTypeDef reciveStatus;
-    reciveStatus=HAL_UART_Receive(&huart3,&i,1,100);
+    reciveStatus=HAL_UART_Receive(&huart3,&i,1,1);
     str[state]=i;
     if((str[state]=='F' || str[state]=='B') && state==0)
     {
@@ -77,16 +83,28 @@ void driveTest(void)
                 {
                     for(j=state-1;j>1;j--)
                     {
-                        DACValue+=(str[j-1]-48)*pow(10,state-1-j);
+                        DACValue+=(str[j-1]-48)*powINT(10,state-1-j);
                     }
                     state=0;
+#if TEST_SPEED_CONRTOL_SYSTEM
+                    if(DACValue>SPEED_MAX_VALUE) 
+                    { 
+                        HAL_UART_Transmit(&huart3,"Incorrect value\n\r",17,100);   
+                    }
+                    else
+                    {
+                        setReferenceSpeed(DACValue);
+                        HAL_UART_Transmit(&huart3,"Value set\n\r",15,100);  
+                    }
+#else
                     if(DACValue>4095)
                         HAL_UART_Transmit(&huart3,"Incorrect value\n\r",17,100); 
                     else
                     {
                         HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)DACValue);
-                        HAL_UART_Transmit(&huart3,"DAC value set\n\r",15,100); 
+                        HAL_UART_Transmit(&huart3,"Value set\n\r",15,100); 
                     }
+#endif
                 }
             }
             else

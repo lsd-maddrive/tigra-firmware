@@ -609,9 +609,9 @@ void driveControlTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-  #if !DRIVE_TEST
-    speedControlProcess(refSpeed,&PID);
-  #endif
+  #if (!DRIVE_TEST || TEST_SPEED_CONRTOL_SYSTEM)
+    speedControlProcess(&PID);
+  #endif 
     osDelay(100);
   }
   /* USER CODE END driveControlTask */
@@ -649,7 +649,6 @@ void hardwareTestTask(void const * argument)
   for(;;)
   {
     testProcess();
-
   }
   /* USER CODE END hardwareTestTask */
 }

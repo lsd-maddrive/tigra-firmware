@@ -5,6 +5,8 @@
 #include "speedMeasure.h"
 #include "math.h"
 
+#define SPEED_MAX_VALUE 500
+
 typedef struct
 {
     int16_t angularSpeed;//Reference angular speed
@@ -23,7 +25,8 @@ typedef struct
     float integralSaturation;
 }PIDHandle_t;
 
-void speedControlProcess(float refSpeed,PIDHandle_t* PID);
+void speedControlProcess(PIDHandle_t* PID);
 float PIDController(PIDHandle_t * PID,float error);
+void setReferenceSpeed(float speed);
 
 #endif
