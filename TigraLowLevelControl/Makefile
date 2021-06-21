@@ -30,6 +30,12 @@ OPT = -Og
 #######################################
 # Build path
 BUILD_DIR = build
+ROSLIB=ros_lib
+ROSSRC = $(ROSLIB)/duration.cpp \
+	     $(ROSLIB)/time.cpp
+
+# Required include directories
+ROSINC = $(ROSLIB)
 
 ######################################
 # source
@@ -159,7 +165,11 @@ Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c \
 Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1/port.c \
 Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c \
 Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc_ex.c
+Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc_ex.c 
+
+CPP_SOURCES =  \
+ros_lib/duration.cpp \
+ros_lib/ros_time.cpp
 
 # ASM sources
 ASM_SOURCES =  \
@@ -238,13 +248,21 @@ C_INCLUDES =  \
 -IMiddlewares/Third_Party/LwIP/system/arch \
 -IMiddlewares/Third_Party/FreeRTOS/Source/include \
 -IMiddlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1 \
--IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS
+-IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS 
 
+CPP_INCLUDES = \
+-Iros_lib \
+-Iros_lib/ros \
+-Iros_lib/rosserial_msgs \
+-Iros_lib/std_msgs \
+-Iros_lib/std_srvs \
+-Iros_lib/tigra_msgs
 
 # compile gcc flags
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 
 CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
+CPPFLAGS = $(MCU) $(C_DEFS) $(CPP_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 
 ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2
@@ -274,11 +292,18 @@ all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET
 # build the application
 #######################################
 # list of objects
+
+
 OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SOURCES:.c=.o)))
 vpath %.c $(sort $(dir $(C_SOURCES)))
+vpath %.cpp $(sort $(dir $(CPP_SOURCES)))
 # list of ASM program objects
 OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
 vpath %.s $(sort $(dir $(ASM_SOURCES)))
+
+$(BUILD_DIR)/%.o: %.cpp Makefile | $(BUILD_DIR) 
+	@echo $<  
+	g++ -c $(CPPFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.cpp=.lst)) $< -o $@
 
 $(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR) 
 	@echo $<

@@ -677,7 +677,7 @@ void feedbackDataSendTask(void const * argument)
   Netif_Config();
   /* Infinite loop */
   for(;;)
-  {
+  { 
     osDelay(100);
   }
   /* USER CODE END 5 */
