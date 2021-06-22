@@ -1,8 +1,8 @@
 #ifndef SOCKET_HARDWARE_H
 #define SOCKET_HARDWARE_H
 
-#include <iostream>
-using namespace std;
+// #include <iostream>
+// using namespace std;
 
 #ifdef __cplusplus
 extern "C"
@@ -43,7 +43,7 @@ extern "C"
         {
             // TODO - reimplement with uC stack
             // Init with destination definition (like 10.143.123.454:11411)
-            cout << "Attempt to initialize finction with destination argument - not supported, call init() with default" << endl;
+            // cout << "Attempt to initialize finction with destination argument - not supported, call init() with default" << endl;
             init();
         }
 
@@ -93,7 +93,8 @@ extern "C"
     //     boost::asio::io_context io_context;
     //     tcp::socket socket;
     //     boost::posix_time::ptime start_time;
-    // };
+    // 
+    };
 
 #ifdef __cplusplus
 }
