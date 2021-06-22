@@ -53,8 +53,8 @@ TIM_HandleTypeDef htim13;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
 
-osThreadId feedbackDataSenHandle;
-osThreadId tcpReciveMessagHandle;
+osThreadId ROSSendMessageHandle;
+osThreadId ROSReciveMessagHandle;
 osThreadId driveControlHandle;
 osThreadId lightControlHandle;
 osThreadId hardwareTestHandle;
@@ -74,8 +74,8 @@ static void MX_TIM13_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM9_Init(void);
-void feedbackDataSendTask(void const * argument);
-void tcpReciveMessageTask(void const * argument);
+void ROSSendMessageTask(void const * argument);
+void ROSReciveMessageTask(void const * argument);
 void driveControlTask(void const * argument);
 void lightControlTask(void const * argument);
 void hardwareTestTask(void const * argument);
@@ -151,13 +151,13 @@ int main(void)
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* definition and creation of feedbackDataSen */
-  osThreadDef(feedbackDataSen, feedbackDataSendTask, osPriorityAboveNormal, 0, 1024);
-  feedbackDataSenHandle = osThreadCreate(osThread(feedbackDataSen), NULL);
+  /* definition and creation of ROSSendMessage */
+  osThreadDef(ROSSendMessage, ROSSendMessageTask, osPriorityAboveNormal, 0, 1024);
+  ROSSendMessageHandle = osThreadCreate(osThread(ROSSendMessage), NULL);
 
-  /* definition and creation of tcpReciveMessag */
-  osThreadDef(tcpReciveMessag, tcpReciveMessageTask, osPriorityAboveNormal, 0, 1024);
-  tcpReciveMessagHandle = osThreadCreate(osThread(tcpReciveMessag), NULL);
+  /* definition and creation of ROSReciveMessag */
+  osThreadDef(ROSReciveMessag, ROSReciveMessageTask, osPriorityAboveNormal, 0, 1024);
+  ROSReciveMessagHandle = osThreadCreate(osThread(ROSReciveMessag), NULL);
 
   /* definition and creation of driveControl */
   osThreadDef(driveControl, driveControlTask, osPriorityHigh, 0, 512);
@@ -662,14 +662,14 @@ void Netif_Config(void)
 }
 /* USER CODE END 4 */
 
-/* USER CODE BEGIN Header_feedbackDataSendTask */
+/* USER CODE BEGIN Header_ROSSendMessageTask */
 /**
-  * @brief  Function implementing the feedbackDataSen thread.
+  * @brief  Function implementing the ROSSendMessage thread.
   * @param  argument: Not used
   * @retval None
   */
-/* USER CODE END Header_feedbackDataSendTask */
-void feedbackDataSendTask(void const * argument)
+/* USER CODE END Header_ROSSendMessageTask */
+void ROSSendMessageTask(void const * argument)
 {
   /* USER CODE BEGIN 5 */
   tcpip_init(NULL, NULL);
@@ -683,22 +683,22 @@ void feedbackDataSendTask(void const * argument)
   /* USER CODE END 5 */
 }
 
-/* USER CODE BEGIN Header_tcpReciveMessageTask */
+/* USER CODE BEGIN Header_ROSReciveMessageTask */
 /**
-* @brief Function implementing the tcpReciveMessag thread.
+* @brief Function implementing the ROSReciveMessag thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_tcpReciveMessageTask */
-void tcpReciveMessageTask(void const * argument)
+/* USER CODE END Header_ROSReciveMessageTask */
+void ROSReciveMessageTask(void const * argument)
 {
-  /* USER CODE BEGIN tcpReciveMessageTask */
+  /* USER CODE BEGIN ROSReciveMessageTask */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END tcpReciveMessageTask */
+  /* USER CODE END ROSReciveMessageTask */
 }
 
 /* USER CODE BEGIN Header_driveControlTask */

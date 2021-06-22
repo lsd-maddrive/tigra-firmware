@@ -32,52 +32,52 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <math.h>
+#ifndef ROS_TIME_H_
+#define ROS_TIME_H_
+
 #include "ros/duration.h"
+#include <math.h>
+#include <stdint.h>
 
 namespace ros
 {
-void normalizeSecNSecSigned(int32_t &sec, int32_t &nsec)
-{
-  int32_t nsec_part = nsec;
-  int32_t sec_part = sec;
+void normalizeSecNSec(uint32_t &sec, uint32_t &nsec);
 
-  while (nsec_part > 1000000000L)
+class Time
+{
+public:
+  uint32_t sec, nsec;
+
+  Time() : sec(0), nsec(0) {}
+  Time(uint32_t _sec, uint32_t _nsec) : sec(_sec), nsec(_nsec)
   {
-    nsec_part -= 1000000000L;
-    ++sec_part;
+    normalizeSecNSec(sec, nsec);
   }
-  while (nsec_part < 0)
+
+  double toSec() const
   {
-    nsec_part += 1000000000L;
-    --sec_part;
-  }
-  sec = sec_part;
-  nsec = nsec_part;
-}
+    return (double)sec + 1e-9 * (double)nsec;
+  };
+  void fromSec(double t)
+  {
+    sec = (uint32_t) floor(t);
+    nsec = (uint32_t) round((t - sec) * 1e9);
+  };
 
-Duration& Duration::operator+=(const Duration &rhs)
-{
-  sec += rhs.sec;
-  nsec += rhs.nsec;
-  normalizeSecNSecSigned(sec, nsec);
-  return *this;
-}
+  uint32_t toNsec()
+  {
+    return (uint32_t)sec * 1000000000ull + (uint32_t)nsec;
+  };
+  Time& fromNSec(int32_t t);
 
-Duration& Duration::operator-=(const Duration &rhs)
-{
-  sec += -rhs.sec;
-  nsec += -rhs.nsec;
-  normalizeSecNSecSigned(sec, nsec);
-  return *this;
-}
+  Time& operator +=(const Duration &rhs);
+  Time& operator -=(const Duration &rhs);
+  Duration operator -(const Time &rhs) const;
 
-Duration& Duration::operator*=(double scale)
-{
-  sec *= scale;
-  nsec *= scale;
-  normalizeSecNSecSigned(sec, nsec);
-  return *this;
-}
+  static Time now();
+  static void setNow(Time & new_now);
+};
 
 }
+
+#endif
