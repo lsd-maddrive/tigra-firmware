@@ -32,7 +32,8 @@ OPT = -Og
 BUILD_DIR = build
 ROSLIB=ros_lib
 ROSSRC = $(ROSLIB)/duration.cpp \
-	     $(ROSLIB)/time.cpp
+	     $(ROSLIB)/time.cpp \
+		 Core/Src/ros.cpp
 
 # Required include directories
 ROSINC = $(ROSLIB)
@@ -247,10 +248,14 @@ C_INCLUDES =  \
 -IMiddlewares/Third_Party/FreeRTOS/Source/include \
 -IMiddlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1 \
 -IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS  \
--IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS
+-IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS  
+
 
 CPP_INCLUDES = \
--Iros_lib 
+-Iros_lib \
+-Iros_lib/ros \
+-ICore/Inc 
+
 
 # compile gcc flags
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections

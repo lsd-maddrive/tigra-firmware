@@ -47,6 +47,8 @@ extern "C" {
 #include "driveControl.h"
 #include "speedMeasure.h"
 #include "tests.h"
+
+#include "ros_proto.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

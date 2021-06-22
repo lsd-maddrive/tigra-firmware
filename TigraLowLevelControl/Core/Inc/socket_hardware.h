@@ -1,7 +1,6 @@
 #ifndef SOCKET_HARDWARE_H
 #define SOCKET_HARDWARE_H
 
-
 #include <iostream>
 using namespace std;
 
@@ -11,15 +10,21 @@ extern "C"
 #endif
 
 #include <math.h>
-
-    // Boost specific socket part for socket utilization
+// #include "lwip/opt.h"
+// #include "lwip/timeouts.h"
+// #include "lwip/tcpip.h"
+// #include "netif/ethernet.h"
+// #include "netif/etharp.h"
+// #include "lwip/tcp.h"
+// #include "ethernetif.h"
+// #include "lwip/arch.h"
+// #include "lwip/api.h"
+// #include "lwip/apps/fs.h"
+// #include "ethernetConf.h"
 
     class SocketHardware
     {
     public:
-        SocketHardware() : socket(io_context)
-        {
-        }
 
         void init()
         {
@@ -80,10 +85,7 @@ extern "C"
 
         uint32_t time()
         {
-            // TODO - reimplement with uC stack
-            // Get the current time in milliseconds
-            // boost::posix_time::time_duration diff = boost::posix_time::microsec_clock::local_time() - start_time;
-            // return diff.total_milliseconds();
+            //return HAL_GetTick();
             return 0;
         }
 
