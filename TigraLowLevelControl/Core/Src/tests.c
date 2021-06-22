@@ -97,6 +97,10 @@ void driveTest(void)
                         HAL_UART_Transmit(&huart3,"Value set\n\r",15,100);  
                     }
 #else
+                    if(direction==1)
+                        HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
+                    else
+                        HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
                     if(DACValue>4095)
                         HAL_UART_Transmit(&huart3,"Incorrect value\n\r",17,100); 
                     else

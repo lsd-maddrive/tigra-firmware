@@ -45,17 +45,9 @@ void speedControlProcess(void)
     if(breakFlag==NO_BREAK)
     {
         controlImpact=PIDController(&SpeedPID,refSpeed-getSpeed());
-        if(controlImpact>=0)
-        {
-            HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
-            HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)controlImpact);
-        }
-        else
-        {
-            controlImpact=-1*controlImpact;
-            HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
-            HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)controlImpact);
-        }      
+        if(controlImpact<0)
+            controlImpact=0;
+        HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)controlImpact);  
     }
     else
     {
@@ -73,7 +65,7 @@ void breakControl(void)
     HAL_ADC_Start(&hadc1);
     HAL_ADC_PollForConversion(&hadc1,100);
     current=HAL_ADC_GetValue(&hadc1);
-    if(breakFlag==BREAK)
+    if(breakFlag==BREAK || breakFlag==BREAK_DROP)
     {
         controllBrakeDrive=PIDController(&breakCurrentPID,(float)(breakRefCurrent-(float)current));
         if(controllBrakeDrive>=0)
@@ -89,8 +81,9 @@ void breakControl(void)
             HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,0);
             TIM9->CCR1=(uint16_t)controllBrakeDrive;
         }
-        if(getSpeed()==0)
+        if((getSpeed()==0) && breakFlag==BREAK)
         {
+            breakFlag=BREAK_DROP;
             breakRefCurrent*=-1;
         }
     }
@@ -106,6 +99,8 @@ void breakRealise(void)
     HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,0);
     HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,0);
     breakFlag=NO_BREAK;
+    breakRefCurrent*=-1;
+    HAL_GPIO_TogglePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin);
 }
 
 /**
