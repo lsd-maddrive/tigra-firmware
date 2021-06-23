@@ -10,9 +10,9 @@ extern TIM_HandleTypeDef htim9;
 
 PIDHandle_t SpeedPID=
   {
-    .kp=1,
-    .ki=1,
-    .kd=1,
+    .kp=10,
+    .ki=5,
+    .kd=0,
     .integralSaturation=2000,
     .controllerSaturation=4095,
     .prevError=0,
@@ -42,6 +42,8 @@ float sign(float a){
 void speedControlProcess(void)
 {
     float controlImpact;
+    if(refSpeed==0)
+        HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0); 
     if(breakFlag==NO_BREAK)
     {
         controlImpact=PIDController(&SpeedPID,refSpeed-getSpeed());
@@ -128,8 +130,11 @@ float PIDController(PIDHandle_t * PID,float error)
  */
 void setReferenceSpeed(float speed)
 {
-    if(sign(speed)!=sign(refSpeed))
+    if(refSpeed!=0)
+    {
+    if(sign(speed)!=sign(refSpeed) || speed==0)
         breakFlag=BREAK;
+    }
     refSpeed=speed;
 }
 

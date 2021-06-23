@@ -63,7 +63,7 @@ float getSpeed(void)
 		speed=3.33/speed;
 		if(direction==1)
 			speed=-1*speed;
-		return speed;
+		return speed/SPEED_DIVIDER;
 	}
 	return 0;
 }
