@@ -28,8 +28,11 @@ void testProcess(void)
     else
         counter++;
 #endif
-#if DRIVE_TEST
+#if DRIVE_TEST && !BREAK_TEST
     driveTest();
+#endif
+#if BREAK_TEST && !DRIVE_TEST
+    breakTest();
 #endif
     osDelay(10);
 }
@@ -119,4 +122,16 @@ void driveTest(void)
         }
     }
 
+}
+
+void breakTest()
+{
+    uint8_t symb;
+    HAL_UART_Receive(&huart3,&symb,1,1);
+    if(symb=='B')
+    {
+        HAL_UART_Transmit(&huart3,"Break\n\r",7,100);
+        setBreakStatus(BREAK); 
+    }
+    breakControl();
 }

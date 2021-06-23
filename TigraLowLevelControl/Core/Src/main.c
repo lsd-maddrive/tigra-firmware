@@ -721,7 +721,7 @@ void driveControlTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-  #if (!DRIVE_TEST || TEST_SPEED_CONRTOL_SYSTEM)
+  #if ((!DRIVE_TEST || TEST_SPEED_CONRTOL_SYSTEM) && !BREAK_TEST)
     speedControlProcess();
   #endif 
     osDelay(100);

@@ -40,5 +40,6 @@ float PIDController(PIDHandle_t * PID,float error);
 void setReferenceSpeed(float speed);
 void breakControl(void);
 void breakRealise(void);
+void setBreakStatus(brakeStatus_t status);
 
 #endif

@@ -89,7 +89,6 @@ void breakControl(void)
             breakRefCurrent*=-1;
         }
     }
-
 }
 
 /**
@@ -138,3 +137,11 @@ void setReferenceSpeed(float speed)
     refSpeed=speed;
 }
 
+/**
+ * @brief   Break status set function.
+ * @param   status - set break status.
+ */
+void setBreakStatus(brakeStatus_t status)
+{
+    breakFlag=status;
+}
