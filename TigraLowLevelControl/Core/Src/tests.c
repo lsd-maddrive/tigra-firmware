@@ -2,6 +2,7 @@
 
 extern UART_HandleTypeDef huart3;
 extern DAC_HandleTypeDef hdac;
+extern ADC_HandleTypeDef hadc1;
 
 uint16_t powINT(uint16_t num,uint16_t pow)
 {
@@ -18,21 +19,22 @@ uint16_t powINT(uint16_t num,uint16_t pow)
  */
 void testProcess(void)
 {
-    static uint16_t counter;
+    static uint16_t counter1;
+    static uint16_t counter2;
 #if ENCODER_TEST
-    if(counter>50)
+    if(counter1>50)
     {
-        counter=0;
+        counter1=0;
         encoderTest(); 
     } 
     else
-        counter++;
+        counter1++;
 #endif
 #if DRIVE_TEST && !BREAK_TEST
     driveTest();
 #endif
 #if BREAK_TEST && !DRIVE_TEST
-    breakTest();
+    breakTest(); 
 #endif
     osDelay(10);
 }
@@ -127,11 +129,42 @@ void driveTest(void)
 void breakTest()
 {
     uint8_t symb;
+    static uint8_t counter=0;
+    float currentAmp;
+    uint8_t string[100];
     HAL_UART_Receive(&huart3,&symb,1,1);
     if(symb=='B')
     {
         HAL_UART_Transmit(&huart3,"Break\n\r",7,100);
-        setBreakStatus(BREAK); 
+        setBreakStatus(BREAK);
     }
-    breakControl();
+    if(symb=='R')
+    {
+        HAL_UART_Transmit(&huart3,"Break realise\n\r",15,100);
+        setBreakStatus(BREAK_DROP);
+    }
+    if(symb=='S')
+    {
+        HAL_UART_Transmit(&huart3,"Break stop\n\r",12,100);
+        setBreakStatus(NO_BREAK);
+    }
+    if(counter>50)
+    {
+        currentAmp=getBrakeCurrent();
+        if(currentAmp<0)
+        {
+            currentAmp*=-1;
+            sprintf(string,"Current:-%d.%03d\n\r",(uint32_t)currentAmp, (uint16_t)((currentAmp - (uint32_t)currentAmp)*1000.) );
+        }
+        else
+            sprintf(string,"Current:%d.%03d\n\r",(uint32_t)currentAmp, (uint16_t)((currentAmp - (uint32_t)currentAmp)*1000.) );
+        HAL_UART_Transmit(&huart3,&string,strlen(string),100);
+        counter=0;
+    }
+    else
+        counter++;
+    if(getBreakStatus()==BREAK)
+        currentControl(BREAK_REF_CURRENT);
+    else if (getBreakStatus==BREAK_DROP)
+        currentControl(-1*BREAK_REF_CURRENT);
 }

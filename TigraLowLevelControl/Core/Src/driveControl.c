@@ -62,32 +62,40 @@ void speedControlProcess(void)
  */
 void breakControl(void)
 {
-    uint16_t current;
-    float controllBrakeDrive;
-    HAL_ADC_Start(&hadc1);
-    HAL_ADC_PollForConversion(&hadc1,100);
-    current=HAL_ADC_GetValue(&hadc1);
+
     if(breakFlag==BREAK || breakFlag==BREAK_DROP)
     {
-        controllBrakeDrive=PIDController(&breakCurrentPID,(float)(breakRefCurrent-(float)current));
-        if(controllBrakeDrive>=0)
-        {
-            HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,0);
-            HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,1);
-            TIM9->CCR1=(uint16_t)controllBrakeDrive;
-        }
-        else if(controllBrakeDrive<0)
-        {
-            controllBrakeDrive=-1*controllBrakeDrive;
-            HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,1);
-            HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,0);
-            TIM9->CCR1=(uint16_t)controllBrakeDrive;
-        }
+        currentControl(breakRefCurrent);
         if((getSpeed()==0) && breakFlag==BREAK)
         {
             breakFlag=BREAK_DROP;
             breakRefCurrent*=-1;
         }
+    }
+}
+
+/**
+ * @brief   Current loop control system.
+ * @param   refCurrent - referenceCurrentrefCurrent.
+ */
+void currentControl(float refCurrent)
+{
+    float controllBrakeDrive;
+    float current;
+    current=getBrakeCurrent();
+    controllBrakeDrive=PIDController(&breakCurrentPID,(float)(refCurrent-(float)current));
+    if(controllBrakeDrive>=0)
+    {
+        HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,0);
+        HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,1);
+        TIM9->CCR1=(uint16_t)controllBrakeDrive;
+    }
+    else if(controllBrakeDrive<0)
+    {
+        controllBrakeDrive=-1*controllBrakeDrive;
+        HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,1);
+        HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,0);
+        TIM9->CCR1=(uint16_t)controllBrakeDrive;
     }
 }
 
@@ -100,8 +108,10 @@ void breakRealise(void)
     HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,0);
     HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,0);
     breakFlag=NO_BREAK;
-    breakRefCurrent*=-1;
-    HAL_GPIO_TogglePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin);
+    if(refSpeed>=0)
+        HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
+    else
+        HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
 }
 
 /**
@@ -129,12 +139,22 @@ float PIDController(PIDHandle_t * PID,float error)
  */
 void setReferenceSpeed(float speed)
 {
-    if(refSpeed!=0)
+    if(getSpeed()!=0)
     {
-    if(sign(speed)!=sign(refSpeed) || speed==0)
+    if(sign(speed)!=getSpeed() || speed==0)
         breakFlag=BREAK;
+        DRIVE_STOP;
+        breakRefCurrent=BREAK_REF_CURRENT;
+        refSpeed=speed;
     }
-    refSpeed=speed;
+    else
+    {
+        refSpeed=speed;
+        if(refSpeed>=0)
+            HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
+        else
+            HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
+    }
 }
 
 /**
@@ -144,4 +164,30 @@ void setReferenceSpeed(float speed)
 void setBreakStatus(brakeStatus_t status)
 {
     breakFlag=status;
+}
+
+/**
+ * @brief   Break status get function.
+ */
+brakeStatus_t getBreakStatus(void)
+{
+    return breakFlag;
+}
+
+/**
+ * @brief   Return the measurment current in Amp.
+ */
+float getBrakeCurrent(void)
+{
+    uint16_t current;
+    uint8_t i;
+    float currentAmp=0;   
+    for(i=0;i<CURRENT_MEASURMENT_COUNT;i++)
+    {
+        HAL_ADC_Start(&hadc1);
+        HAL_ADC_PollForConversion(&hadc1,100);
+        current=HAL_ADC_GetValue(&hadc1);
+        currentAmp+=(float)((float)(current-CURRENS_SENSOR_OFFSET)*0.00081)/CURRENT_SENSOR_SENSITIVITY;
+    }
+    return currentAmp/CURRENT_MEASURMENT_COUNT;
 }

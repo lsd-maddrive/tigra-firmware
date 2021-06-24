@@ -6,8 +6,14 @@
 #include "speedMeasure.h"
 #include "math.h"
 
+#define DRIVE_STOP HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0)
+
 #define SPEED_MAX_VALUE 500
 #define BREAK_REF_CURRENT 1
+
+#define CURRENT_SENSOR_SENSITIVITY 0.21
+#define CURRENS_SENSOR_OFFSET 2048
+#define CURRENT_MEASURMENT_COUNT 10
 
 typedef struct
 {
@@ -39,7 +45,10 @@ void speedControlProcess(void);
 float PIDController(PIDHandle_t * PID,float error);
 void setReferenceSpeed(float speed);
 void breakControl(void);
+void currentControl(float refCurrent);
 void breakRealise(void);
 void setBreakStatus(brakeStatus_t status);
+brakeStatus_t getBreakStatus(void);
+float getBrakeCurrent(void);
 
 #endif
