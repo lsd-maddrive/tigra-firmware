@@ -21,11 +21,11 @@ PIDHandle_t SpeedPID=
 
   PIDHandle_t breakCurrentPID=
   {
-    .kp=1,
-    .ki=1,
-    .kd=1,
-    .integralSaturation=1000,
-    .controllerSaturation=2000,
+    .kp=10000,
+    .ki=800,
+    .kd=800,
+    .integralSaturation=30000,
+    .controllerSaturation=30000,
     .prevError=0,
     .integralTerm=0
   };
@@ -104,14 +104,17 @@ void currentControl(float refCurrent)
  */
 void breakRealise(void)
 {
-    TIM9->CCR1=0;
-    HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,0);
-    HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,0);
-    breakFlag=NO_BREAK;
-    if(refSpeed>=0)
-        HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
-    else
-        HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
+    if(breakFlag==BREAK_DROP)
+    {
+        TIM9->CCR1=0;
+        HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,0);
+        HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,0);
+        breakFlag=NO_BREAK;
+        if(refSpeed>=0)
+            HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
+        else
+            HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
+    }
 }
 
 /**
@@ -125,11 +128,11 @@ float PIDController(PIDHandle_t * PID,float error)
     float controllerOut;
     PID->prevError=error;
     PID->integralTerm+=error;
-    if(fabs(PID->integralTerm)>PID->integralSaturation)
-        PID->integralTerm=sign(PID->integralTerm)*PID->integralSaturation;
+    /*if(fabs(PID->integralTerm)>PID->integralSaturation)
+        PID->integralTerm=sign(PID->integralTerm)*PID->integralSaturation;*/
     controllerOut=error*PID->kp+PID->integralTerm*PID->ki+deltaError*PID->kd;
-    if(fabs(controllerOut)>PID->controllerSaturation)
-        controllerOut=sign(controllerOut)*PID->controllerSaturation;
+    /*if(fabs(controllerOut)>PID->controllerSaturation)
+        controllerOut=sign(controllerOut)*PID->controllerSaturation;*/
     return controllerOut;
 }
 
@@ -189,5 +192,8 @@ float getBrakeCurrent(void)
         current=HAL_ADC_GetValue(&hadc1);
         currentAmp+=(float)((float)(current-CURRENS_SENSOR_OFFSET)*0.00081)/CURRENT_SENSOR_SENSITIVITY;
     }
-    return currentAmp/CURRENT_MEASURMENT_COUNT;
+    currentAmp/=CURRENT_MEASURMENT_COUNT;
+    if(currentAmp<0.1 && currentAmp>-0.1)
+        currentAmp=0;
+    return -1*currentAmp;
 }

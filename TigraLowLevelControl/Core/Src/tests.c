@@ -4,6 +4,8 @@ extern UART_HandleTypeDef huart3;
 extern DAC_HandleTypeDef hdac;
 extern ADC_HandleTypeDef hadc1;
 
+extern PIDHandle_t breakCurrentPID;
+
 uint16_t powINT(uint16_t num,uint16_t pow)
 {
   uint16_t i,rez=1;
@@ -129,26 +131,33 @@ void driveTest(void)
 void breakTest()
 {
     uint8_t symb;
-    static uint8_t counter=0;
+    static uint16_t counter=0;
     float currentAmp;
     uint8_t string[100];
     HAL_UART_Receive(&huart3,&symb,1,1);
     if(symb=='B')
     {
         HAL_UART_Transmit(&huart3,"Break\n\r",7,100);
+        breakCurrentPID.integralSaturation=0;
         setBreakStatus(BREAK);
     }
     if(symb=='R')
     {
-        HAL_UART_Transmit(&huart3,"Break realise\n\r",15,100);
-        setBreakStatus(BREAK_DROP);
+        if(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_0)==1)
+        {
+            HAL_UART_Transmit(&huart3,"Break realise\n\r",15,100);
+            breakCurrentPID.integralSaturation=0;
+            setBreakStatus(BREAK_DROP);
+        }
     }
     if(symb=='S')
     {
         HAL_UART_Transmit(&huart3,"Break stop\n\r",12,100);
+        breakCurrentPID.integralSaturation=0;
+        TIM9->CCR1=0;
         setBreakStatus(NO_BREAK);
     }
-    if(counter>50)
+    /*if(counter>100)
     {
         currentAmp=getBrakeCurrent();
         if(currentAmp<0)
@@ -160,11 +169,11 @@ void breakTest()
             sprintf(string,"Current:%d.%03d\n\r",(uint32_t)currentAmp, (uint16_t)((currentAmp - (uint32_t)currentAmp)*1000.) );
         HAL_UART_Transmit(&huart3,&string,strlen(string),100);
         counter=0;
-    }
+    }*/
     else
         counter++;
     if(getBreakStatus()==BREAK)
         currentControl(BREAK_REF_CURRENT);
-    else if (getBreakStatus==BREAK_DROP)
+    else if (getBreakStatus()==BREAK_DROP)
         currentControl(-1*BREAK_REF_CURRENT);
 }
