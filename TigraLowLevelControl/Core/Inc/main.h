@@ -49,6 +49,7 @@ extern "C" {
 #include "tests.h"
 
 #include "ros_proto.h"
+
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

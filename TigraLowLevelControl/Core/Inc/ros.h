@@ -13,6 +13,7 @@ namespace ros
     typedef NodeHandle_<SocketHardware, 10, 10, 512, 512> NodeHandle; // default 25, 25, 512, 512
 }
 
+
 #ifdef __cplusplus
 }
 #endif

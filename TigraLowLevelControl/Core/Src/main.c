@@ -38,7 +38,7 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-float measSpeed;
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -174,7 +174,7 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
-  
+  rosInit();
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */
