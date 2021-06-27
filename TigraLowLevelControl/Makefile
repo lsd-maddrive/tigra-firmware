@@ -255,7 +255,30 @@ C_INCLUDES =  \
 CPP_INCLUDES = \
 -Iros_lib \
 -Iros_lib/ros \
--ICore/Inc 
+-ICore/Inc \
+-IDrivers/STM32F7xx_HAL_Driver/Inc \
+-IDrivers/STM32F7xx_HAL_Driver/Inc/Legacy \
+-IDrivers/CMSIS/Device/ST/STM32F7xx/Include \
+-IDrivers/CMSIS/Include \
+-IMiddlewares/Third_Party/LwIP/src/include \
+-IMiddlewares/Third_Party/LwIP/system \
+-IMiddlewares/Third_Party/LwIP/src/include/netif/ppp \
+-IMiddlewares/Third_Party/LwIP/src/include/lwip \
+-IMiddlewares/Third_Party/LwIP/src/include/lwip/apps \
+-IMiddlewares/Third_Party/LwIP/src/include/lwip/priv \
+-IMiddlewares/Third_Party/LwIP/src/include/lwip/prot \
+-IMiddlewares/Third_Party/LwIP/src/include/netif \
+-IMiddlewares/Third_Party/LwIP/src/include/compat/posix \
+-IMiddlewares/Third_Party/LwIP/src/include/compat/posix/arpa \
+-IMiddlewares/Third_Party/LwIP/src/include/compat/posix/net \
+-IMiddlewares/Third_Party/LwIP/src/include/compat/posix/sys \
+-IMiddlewares/Third_Party/LwIP/src/include/compat/stdc \
+-IMiddlewares/Third_Party/LwIP/system/arch \
+-IMiddlewares/Third_Party/FreeRTOS/Source/include \
+-IMiddlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1 \
+-IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS  \
+-IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS   \
+-IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS
 
 
 # compile gcc flags

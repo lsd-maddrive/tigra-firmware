@@ -18,5 +18,6 @@ void testProcess(void);
 void encoderTest(void);
 void driveTest(void);
 void breakTest(void);
+void printDebugMessage(uint8_t *str);
 
 #endif

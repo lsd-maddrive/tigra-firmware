@@ -6,6 +6,9 @@ extern ADC_HandleTypeDef hadc1;
 
 extern PIDHandle_t breakCurrentPID;
 
+/**
+ * @brief   Print debug message to UART3
+ */
 uint16_t powINT(uint16_t num,uint16_t pow)
 {
   uint16_t i,rez=1;
@@ -14,6 +17,15 @@ uint16_t powINT(uint16_t num,uint16_t pow)
     rez*=num;
   }
   return rez;
+}
+
+/**
+ * @brief   Print debug message to UART3.
+ * @param   str - pointer to message.
+ */
+void printDebugMessage(uint8_t *str)
+{
+    HAL_UART_Transmit(&huart3,str,strlen(str),100);
 }
 
 /**
