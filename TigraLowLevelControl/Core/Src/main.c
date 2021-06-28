@@ -175,6 +175,8 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   rosInit();
+  GPIOB->MODER|=GPIO_MODER_MODER7_0;
+  GPIOB->BSRR=GPIO_BSRR_BS_7;
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */

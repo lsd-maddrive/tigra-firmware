@@ -1,7 +1,9 @@
 #pragma once
+//#define __cplusplus
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 /*** ROS prototypes ***/
 
@@ -14,3 +16,4 @@ void rosInit();
 #ifdef __cplusplus
 }
 #endif
+ 

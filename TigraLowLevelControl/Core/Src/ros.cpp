@@ -48,7 +48,8 @@ void ROSSpinThreadTask(void const * argument)
         if(timer==50)
         {
             timer=0;
-            outSpeed.data=(int)getSpeed();
+            ///outSpeed.data=(int)getSpeed();
+            outSpeed.data=(int)10;
             topicOutSpeed.publish(&outSpeed);
         }
         else
