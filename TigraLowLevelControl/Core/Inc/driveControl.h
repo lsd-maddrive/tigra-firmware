@@ -6,8 +6,6 @@
 #include "speedMeasure.h"
 #include "math.h"
 
-#define DRIVE_STOP HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0)
-
 #define SPEED_MAX_VALUE 500
 #define BREAK_REF_CURRENT 1
 

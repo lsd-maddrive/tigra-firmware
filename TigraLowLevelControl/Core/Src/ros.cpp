@@ -45,6 +45,8 @@ void ROSSpinThreadTask(void const * argument)
     uint16_t timer=0;
     while(true)
     {
+        GPIOB->MODER|=GPIO_MODER_MODER7_0;
+        GPIOB->BSRR=GPIO_BSRR_BS_7;
         if(timer==50)
         {
             timer=0;
@@ -71,5 +73,6 @@ void rosInit()
     /* ROS service client */
     osThreadDef(ROSSpinThread, ROSSpinThreadTask, osPriorityAboveNormal, 0, 1024);
     ROSSpinThreadHandle = osThreadCreate(osThread(ROSSpinThread), NULL);
+
     /* Main ROS thread */
 }

@@ -49,6 +49,7 @@ void speedControlProcess(void)
         controlImpact=PIDController(&SpeedPID,refSpeed-getSpeed());
         if(controlImpact<0)
             controlImpact=0;
+        HAL_DAC_Start(&hdac,DAC_CHANNEL_1);
         HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)controlImpact);  
     }
     else
@@ -146,7 +147,8 @@ void setReferenceSpeed(float speed)
     {
     if(sign(speed)!=getSpeed() || speed==0)
         breakFlag=BREAK;
-        DRIVE_STOP;
+        AL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0);
+        HAL_DAC_Stop(&hdac,DAC_CHANNEL_1);
         breakRefCurrent=BREAK_REF_CURRENT;
         refSpeed=speed;
     }

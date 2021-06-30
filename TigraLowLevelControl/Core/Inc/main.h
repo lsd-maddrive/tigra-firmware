@@ -95,6 +95,8 @@ void Error_Handler(void);
 #define BREAK_LOW_Pin GPIO_PIN_0
 #define BREAK_LOW_GPIO_Port GPIOF
 #define BREAK_LOW_EXTI_IRQn EXTI0_IRQn
+#define ENABLE_INDICATOR_Pin GPIO_PIN_1
+#define ENABLE_INDICATOR_GPIO_Port GPIOG
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
