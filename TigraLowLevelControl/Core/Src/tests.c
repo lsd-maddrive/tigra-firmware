@@ -90,6 +90,8 @@ void driveTest(void)
         state++;
         if(str[state]=='B')
             direction=1;
+        if(str[state]=='F')
+            direction=0;
     }
     else
     {
@@ -117,14 +119,15 @@ void driveTest(void)
                     }
 #else
                     if(direction==1)
-                        HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
-                    else
                         HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
+                    else
+                        HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
                     if(DACValue>4095)
                         HAL_UART_Transmit(&huart3,"Incorrect value\n\r",17,100); 
                     else
                     {
                         HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)DACValue);
+                        HAL_DAC_Start(&hdac,DAC_CHANNEL_1);
                         HAL_UART_Transmit(&huart3,"Value set\n\r",15,100); 
                     }
 #endif

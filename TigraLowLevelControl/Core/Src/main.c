@@ -195,7 +195,7 @@ int main(void)
 }
 
 /**
-  * @brief System Clock Configuration
+  * @brief System Clock Configuration 
   * @retval None
   */
 void SystemClock_Config(void)
@@ -608,8 +608,8 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : DRIVE_REVERSE_Pin */
   GPIO_InitStruct.Pin = DRIVE_REVERSE_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(DRIVE_REVERSE_GPIO_Port, &GPIO_InitStruct);
 
@@ -628,8 +628,8 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : ENABLE_INDICATOR_Pin */
   GPIO_InitStruct.Pin = ENABLE_INDICATOR_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(ENABLE_INDICATOR_GPIO_Port, &GPIO_InitStruct);
 
@@ -726,11 +726,15 @@ void driveControlTask(void const * argument)
 {
   /* USER CODE BEGIN driveControlTask */
   float refSpeed=0;
-  HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,1);
+  HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,0);
   HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0);
   TIM9->CCR1=0;
   HAL_TIM_PWM_Start(&htim9, TIM_CHANNEL_1);
-  setBreakStatus(BREAK_DROP);
+  HAL_DAC_Start(&hdac,DAC_CHANNEL_1);
+  if(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_0)==1)
+  {
+    setBreakStatus(BREAK_DROP);
+  }
   /* Infinite loop */
   for(;;)
   {

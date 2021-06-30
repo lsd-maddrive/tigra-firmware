@@ -66,11 +66,13 @@ void breakControl(void)
 
     if(breakFlag==BREAK || breakFlag==BREAK_DROP)
     {
-        currentControl(breakRefCurrent);
+        if(breakFlag==BREAK)
+            currentControl(breakRefCurrent);
+        else
+            currentControl(-1*breakRefCurrent);
         if((getSpeed()==0) && breakFlag==BREAK)
         {
             breakFlag=BREAK_DROP;
-            breakRefCurrent*=-1;
         }
     }
 }
