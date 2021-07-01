@@ -10,7 +10,7 @@ extern "C"
 #include "main.h"
 
 #define CONNECTION_PORT 80
-#define SERVER_PORT 1234
+#define SERVER_PORT 23456 
 
     class SocketHardware
     {
@@ -26,7 +26,7 @@ extern "C"
         {
             this->startTime=HAL_GetTick();
             printDebugMessage((uint8_t*)"TCP connection...\n\r");
-            IP4_ADDR(&this->ServerIPaddr, 192,168,0,1);
+            IP4_ADDR(&this->ServerIPaddr, 192,168,10,1);
             this->tcpConnection = netconn_new(NETCONN_TCP);
             if(this->tcpConnection!=NULL)
             {
@@ -36,7 +36,7 @@ extern "C"
                     this->error=netconn_connect(this->tcpConnection, &this->ServerIPaddr, SERVER_PORT);
                     if(this->error==ERR_OK)
                         printDebugMessage((uint8_t*)"Connected\n\r");
-                    else
+                    else   
                         printDebugMessage((uint8_t*)"Server not connected\n\r");
                 }
                 else
@@ -60,21 +60,24 @@ extern "C"
             // TODO - reimplement with uC stack
             err_t reciveError;
             uint8_t retBuff;
-            static struct netbuf *inbuf = NULL;
-            static uint8_t* buf = NULL;
-            static uint16_t buflen = NULL;
+            static struct netbuf *inbuf;
+            static uint8_t* buf;
+            static uint16_t buflen = 0;
             static uint16_t readStep = 0;
             if(readStep==0)
             {
                 reciveError = netconn_recv(this->tcpConnection, &inbuf);
-                if(reciveError==ERR_OK)
+                if(reciveError==ERR_OK) 
                 {
                     netbuf_data(inbuf, (void**)&buf, &buflen);
                     retBuff=buf[readStep];
                     readStep++;
                 } 
                 else
-                    printDebugMessage((uint8_t*)"Recive error\n\r");   
+                {
+                    printDebugMessage((uint8_t*)"Recive error\n\r"); 
+                    return -1;
+                }
             }
             else
             {

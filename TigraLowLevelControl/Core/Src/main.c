@@ -54,8 +54,7 @@ TIM_HandleTypeDef htim13;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
 
-osThreadId ROSSendMessageHandle;
-osThreadId ROSReciveMessagHandle;
+osThreadId DefaultTaskHandle;
 osThreadId driveControlHandle;
 osThreadId lightControlHandle;
 osThreadId hardwareTestHandle;
@@ -75,8 +74,7 @@ static void MX_TIM13_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM9_Init(void);
-void ROSSendMessageTask(void const * argument);
-void ROSReciveMessageTask(void const * argument);
+void DefaultTaskTask(void const * argument);
 void driveControlTask(void const * argument);
 void lightControlTask(void const * argument);
 void hardwareTestTask(void const * argument);
@@ -154,13 +152,9 @@ int main(void)
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* definition and creation of ROSSendMessage */
-  osThreadDef(ROSSendMessage, ROSSendMessageTask, osPriorityAboveNormal, 0, 1024);
-  ROSSendMessageHandle = osThreadCreate(osThread(ROSSendMessage), NULL);
-
-  /* definition and creation of ROSReciveMessag */
-  osThreadDef(ROSReciveMessag, ROSReciveMessageTask, osPriorityAboveNormal, 0, 1024);
-  ROSReciveMessagHandle = osThreadCreate(osThread(ROSReciveMessag), NULL);
+  /* definition and creation of DefaultTask */
+  osThreadDef(DefaultTask, DefaultTaskTask, osPriorityAboveNormal, 0, 1024);
+  DefaultTaskHandle = osThreadCreate(osThread(DefaultTask), NULL);
 
   /* definition and creation of driveControl */
   osThreadDef(driveControl, driveControlTask, osPriorityHigh, 0, 512);
@@ -603,13 +597,13 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port, DRIVE_REVERSE_Pin, 1);
+  HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port, DRIVE_REVERSE_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOE, BREAK_DIRECTION_R_Pin|BREAK_DIRECTION_L_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port, ENABLE_INDICATOR_Pin, 1);
+  HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port, ENABLE_INDICATOR_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin : DRIVE_REVERSE_Pin */
   GPIO_InitStruct.Pin = DRIVE_REVERSE_Pin;
@@ -680,14 +674,14 @@ void Netif_Config(void)
 }
 /* USER CODE END 4 */
 
-/* USER CODE BEGIN Header_ROSSendMessageTask */
+/* USER CODE BEGIN Header_DefaultTaskTask */
 /**
-  * @brief  Function implementing the ROSSendMessage thread.
+  * @brief  Function implementing the DefaultTask thread.
   * @param  argument: Not used
   * @retval None
   */
-/* USER CODE END Header_ROSSendMessageTask */
-void ROSSendMessageTask(void const * argument)
+/* USER CODE END Header_DefaultTaskTask */
+void DefaultTaskTask(void const * argument)
 {
   /* USER CODE BEGIN 5 */
   tcpip_init(NULL, NULL);
@@ -697,27 +691,9 @@ void ROSSendMessageTask(void const * argument)
   /* Infinite loop */
   for(;;)
   { 
-    osDelay(100);
+    osDelay(1000);
   }
   /* USER CODE END 5 */
-}
-
-/* USER CODE BEGIN Header_ROSReciveMessageTask */
-/**
-* @brief Function implementing the ROSReciveMessag thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_ROSReciveMessageTask */
-void ROSReciveMessageTask(void const * argument)
-{
-  /* USER CODE BEGIN ROSReciveMessageTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END ROSReciveMessageTask */
 }
 
 /* USER CODE BEGIN Header_driveControlTask */
@@ -731,7 +707,7 @@ void driveControlTask(void const * argument)
 {
   /* USER CODE BEGIN driveControlTask */
   float refSpeed=0;
-  HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,0);
+  HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,1);
   TIM9->CCR1=0;
   HAL_TIM_PWM_Start(&htim9, TIM_CHANNEL_1);
   if(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_0)==1)
@@ -744,7 +720,7 @@ void driveControlTask(void const * argument)
   #if ((!DRIVE_TEST || TEST_SPEED_CONRTOL_SYSTEM) && !BREAK_TEST)
     speedControlProcess();
   #endif 
-    osDelay(20);
+    osDelay(100);
   }
   /* USER CODE END driveControlTask */
 }

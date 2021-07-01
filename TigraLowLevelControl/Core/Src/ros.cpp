@@ -7,6 +7,7 @@
 
 #include <std_msgs/UInt8.h>
 #include <std_msgs/Int8.h>
+#include <std_msgs/String.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -21,7 +22,7 @@ ros::NodeHandle ros_node;
 // ros::Subscriber<std_msgs::UInt8>      topic_mode( "mode_status", mode_cb );
 //=======================================================
 
-void ROSspeedReciveFeedback(const std_msgs::Int8 &msg)
+/*void ROSspeedReciveFeedback(const std_msgs::Int8 &msg)
 {
     char str[50];
     if((int)msg.data<0)
@@ -31,11 +32,11 @@ void ROSspeedReciveFeedback(const std_msgs::Int8 &msg)
     else
         sprintf(str,"ROS Speed:%d\n\r",(int)msg.data);
     printDebugMessage((uint8_t*)str);
-}
+}*/
 
-ros::Subscriber<std_msgs::Int8> topicInSpeed("InSpeed", &ROSspeedReciveFeedback);
-std_msgs::Int8 outSpeed;
-ros::Publisher topicOutSpeed("outSpeed", &outSpeed);
+//ros::Subscriber<std_msgs::Int8> topicInSpeed("InSpeed", &ROSspeedReciveFeedback);
+std_msgs::String outSpeed;
+ros::Publisher topicOutSpeed("topicOutSpeed", &outSpeed);
 
 /*
  * ROS spin thread - used to receive messages
@@ -51,7 +52,7 @@ void ROSSpinThreadTask(void const * argument)
         {
             timer=0;
             ///outSpeed.data=(int)getSpeed();
-            outSpeed.data=(int)10;
+            outSpeed.data = "hello";
             topicOutSpeed.publish(&outSpeed);
         }
         else
@@ -69,7 +70,7 @@ void rosInit()
     /* ROS publishers */
     ros_node.advertise(topicOutSpeed);
     /* ROS subscribers */
-    ros_node.subscribe(topicInSpeed);
+    //ros_node.subscribe(topicInSpeed);
     /* ROS service client */
     osThreadDef(ROSSpinThread, ROSSpinThreadTask, osPriorityAboveNormal, 0, 1024);
     ROSSpinThreadHandle = osThreadCreate(osThread(ROSSpinThread), NULL);
