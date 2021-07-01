@@ -603,13 +603,13 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port, DRIVE_REVERSE_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port, DRIVE_REVERSE_Pin, 1);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOE, BREAK_DIRECTION_R_Pin|BREAK_DIRECTION_L_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port, ENABLE_INDICATOR_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port, ENABLE_INDICATOR_Pin, 1);
 
   /*Configure GPIO pin : DRIVE_REVERSE_Pin */
   GPIO_InitStruct.Pin = DRIVE_REVERSE_Pin;
@@ -744,7 +744,7 @@ void driveControlTask(void const * argument)
   #if ((!DRIVE_TEST || TEST_SPEED_CONRTOL_SYSTEM) && !BREAK_TEST)
     speedControlProcess();
   #endif 
-    osDelay(100);
+    osDelay(20);
   }
   /* USER CODE END driveControlTask */
 }

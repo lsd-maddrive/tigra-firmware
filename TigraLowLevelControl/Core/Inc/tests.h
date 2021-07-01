@@ -3,7 +3,7 @@
 
 #define ENCODER_TEST 1
 #define DRIVE_TEST 1
-#define TEST_SPEED_CONRTOL_SYSTEM 0
+#define TEST_SPEED_CONRTOL_SYSTEM 1
 #define BREAK_TEST 0
 
 

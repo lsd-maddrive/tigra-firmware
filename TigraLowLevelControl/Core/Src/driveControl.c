@@ -3,6 +3,7 @@
 static brakeStatus_t breakFlag=NO_BREAK;
 static float refSpeed;
 static float breakRefCurrent=BREAK_REF_CURRENT;
+static uint8_t reverse=1;
 
 extern DAC_HandleTypeDef hdac;
 extern ADC_HandleTypeDef hadc1;
@@ -10,8 +11,8 @@ extern TIM_HandleTypeDef htim9;
 
 PIDHandle_t SpeedPID=
   {
-    .kp=10,
-    .ki=5,
+    .kp=1,
+    .ki=0.1,
     .kd=0,
     .prevError=0,
     .integralTerm=0
@@ -20,7 +21,7 @@ PIDHandle_t SpeedPID=
   PIDHandle_t breakCurrentPID=
   {
     .kp=10000,
-    .ki=800,
+    .ki=7000,
     .kd=800,
     .prevError=0,
     .integralTerm=0
@@ -29,7 +30,7 @@ PIDHandle_t SpeedPID=
 float sign(float a){
 	if (a>0) return 1;
 	else if (a<0) return -1;
-	else return 0;
+	else return 1;
 }
 
 /**
@@ -39,12 +40,30 @@ void speedControlProcess(void)
 {
     float controlImpact;
     if(refSpeed==0)
+    {
         HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0); 
+        HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
+        SpeedPID.integralTerm=0;
+        SpeedPID.prevError=0;
+        osDelay(100);
+    }
     if(breakFlag==NO_BREAK)
     {
+        if(reverse==1)
+        {
+            HAL_GPIO_TogglePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin);
+            SpeedPID.integralTerm=0;
+            SpeedPID.prevError=0;
+            reverse=0;
+            osDelay(100);
+        }
         controlImpact=PIDController(&SpeedPID,refSpeed-getSpeed());
+        if(controlImpact<0 && refSpeed<0)
+            controlImpact*=-1;   
         if(controlImpact<0)
             controlImpact=0;
+        if(controlImpact!=0)
+            controlImpact+=1500;
         HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)controlImpact);  
     }
     else
@@ -58,16 +77,29 @@ void speedControlProcess(void)
  */
 void breakControl(void)
 {
-
     if(breakFlag==BREAK || breakFlag==BREAK_DROP)
     {
         if(breakFlag==BREAK)
             currentControl(breakRefCurrent);
-        else
+        else if(breakFlag==BREAK_DROP)
             currentControl(-1*breakRefCurrent);
         if((getSpeed()==0) && breakFlag==BREAK)
         {
-            breakFlag=BREAK_DROP;
+            if(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_0)==0)
+            {
+                breakFlag=NO_BREAK;  
+                TIM9->CCR1=0;
+                breakCurrentPID.integralTerm=0;
+                breakCurrentPID.prevError=0;
+                HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,0);
+                HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,0);
+            }
+            else 
+            {
+                breakFlag=BREAK_DROP;
+                breakCurrentPID.integralTerm=0;
+                breakCurrentPID.prevError=0;
+            }
         }
     }
 }
@@ -108,10 +140,6 @@ void breakRealise(void)
         HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,0);
         HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,0);
         breakFlag=NO_BREAK;
-        if(refSpeed>=0)
-            HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
-        else
-            HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
     }
 }
 
@@ -138,20 +166,27 @@ void setReferenceSpeed(float speed)
 {
     if(getSpeed()!=0)
     {
-    if(sign(speed)!=getSpeed() || speed==0)
-        breakFlag=BREAK;
-        AL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0);
-        breakRefCurrent=BREAK_REF_CURRENT;
-        refSpeed=speed;
+        if(sign(speed)!=sign(getSpeed()) || speed==0)
+        {
+            breakFlag=BREAK;
+            HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0);
+            SpeedPID.integralTerm=0;
+            breakRefCurrent=BREAK_REF_CURRENT;
+            if(sign(speed)!=sign(refSpeed))
+                reverse=1;
+            refSpeed=speed;
+        }
+        else if(sign(speed)==sign(getSpeed()) && sign(speed)==sign(refSpeed))
+        {
+            refSpeed=speed;
+        }
     }
     else
-    {
-        refSpeed=speed;
-        if(refSpeed>=0)
-            HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
-        else
-            HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
-    }
+        {
+            refSpeed=speed;
+            if(refSpeed<0)
+                reverse=1;
+        }
 }
 
 /**

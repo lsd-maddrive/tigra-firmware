@@ -118,8 +118,11 @@ void driveTest(void)
                         HAL_UART_Transmit(&huart3,"Incorrect value\n\r",17,100);   
                     }
                     else
-                    {
-                        setReferenceSpeed(DACValue);
+                    {   
+                        if(dir==1)
+                            setReferenceSpeed((float)-1*DACValue);
+                        else   
+                            setReferenceSpeed(DACValue);
                         HAL_UART_Transmit(&huart3,"Value set\n\r",15,100);  
                     }
 #else
