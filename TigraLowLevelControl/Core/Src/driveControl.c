@@ -13,8 +13,6 @@ PIDHandle_t SpeedPID=
     .kp=10,
     .ki=5,
     .kd=0,
-    .integralSaturation=2000,
-    .controllerSaturation=4095,
     .prevError=0,
     .integralTerm=0
   };
@@ -24,8 +22,6 @@ PIDHandle_t SpeedPID=
     .kp=10000,
     .ki=800,
     .kd=800,
-    .integralSaturation=30000,
-    .controllerSaturation=30000,
     .prevError=0,
     .integralTerm=0
   };
@@ -49,7 +45,6 @@ void speedControlProcess(void)
         controlImpact=PIDController(&SpeedPID,refSpeed-getSpeed());
         if(controlImpact<0)
             controlImpact=0;
-        HAL_DAC_Start(&hdac,DAC_CHANNEL_1);
         HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)controlImpact);  
     }
     else
@@ -131,11 +126,7 @@ float PIDController(PIDHandle_t * PID,float error)
     float controllerOut;
     PID->prevError=error;
     PID->integralTerm+=error;
-    /*if(fabs(PID->integralTerm)>PID->integralSaturation)
-        PID->integralTerm=sign(PID->integralTerm)*PID->integralSaturation;*/
     controllerOut=error*PID->kp+PID->integralTerm*PID->ki+deltaError*PID->kd;
-    /*if(fabs(controllerOut)>PID->controllerSaturation)
-        controllerOut=sign(controllerOut)*PID->controllerSaturation;*/
     return controllerOut;
 }
 
@@ -150,7 +141,6 @@ void setReferenceSpeed(float speed)
     if(sign(speed)!=getSpeed() || speed==0)
         breakFlag=BREAK;
         AL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0);
-        HAL_DAC_Stop(&hdac,DAC_CHANNEL_1);
         breakRefCurrent=BREAK_REF_CURRENT;
         refSpeed=speed;
     }

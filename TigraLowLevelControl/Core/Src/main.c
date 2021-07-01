@@ -127,6 +127,8 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM9_Init();
   /* USER CODE BEGIN 2 */
+  HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0);
+  HAL_DAC_Start(&hdac,DAC_CHANNEL_1);
   encoderStart(18);
   /* USER CODE END 2 */
 
@@ -195,7 +197,7 @@ int main(void)
 }
 
 /**
-  * @brief System Clock Configuration 
+  * @brief System Clock Configuration
   * @retval None
   */
 void SystemClock_Config(void)
@@ -601,15 +603,18 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, DRIVE_REVERSE_Pin|BREAK_DIRECTION_R_Pin|BREAK_DIRECTION_L_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port, DRIVE_REVERSE_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port, ENABLE_INDICATOR_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, BREAK_DIRECTION_R_Pin|BREAK_DIRECTION_L_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port, ENABLE_INDICATOR_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin : DRIVE_REVERSE_Pin */
   GPIO_InitStruct.Pin = DRIVE_REVERSE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(DRIVE_REVERSE_GPIO_Port, &GPIO_InitStruct);
 
@@ -629,7 +634,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : ENABLE_INDICATOR_Pin */
   GPIO_InitStruct.Pin = ENABLE_INDICATOR_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(ENABLE_INDICATOR_GPIO_Port, &GPIO_InitStruct);
 
@@ -727,10 +732,8 @@ void driveControlTask(void const * argument)
   /* USER CODE BEGIN driveControlTask */
   float refSpeed=0;
   HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,0);
-  HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0);
   TIM9->CCR1=0;
   HAL_TIM_PWM_Start(&htim9, TIM_CHANNEL_1);
-  HAL_DAC_Start(&hdac,DAC_CHANNEL_1);
   if(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_0)==1)
   {
     setBreakStatus(BREAK_DROP);

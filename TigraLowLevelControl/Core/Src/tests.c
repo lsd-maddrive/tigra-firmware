@@ -73,6 +73,7 @@ void encoderTest(void)
 /**
  * @brief   Main drive test function.
  */
+
 void driveTest(void)
 {
     uint8_t i;
@@ -80,18 +81,22 @@ void driveTest(void)
     static uint8_t state=0;
     static uint8_t str[10];
     uint32_t DACValue=0;
-    uint8_t direction;
+    static uint8_t dir;
     HAL_StatusTypeDef reciveStatus;
     reciveStatus=HAL_UART_Receive(&huart3,&i,1,1);
     str[state]=i;
     if((str[state]=='F' || str[state]=='B') && state==0)
     {
         HAL_UART_Transmit(&huart3,"Print DAC value\n\r",17,100); 
-        state++;
         if(str[state]=='B')
-            direction=1;
+        {
+            dir=1;
+        }
         if(str[state]=='F')
-            direction=0;
+        {
+            dir=0;
+        }
+        state++;
     }
     else
     {
@@ -118,7 +123,7 @@ void driveTest(void)
                         HAL_UART_Transmit(&huart3,"Value set\n\r",15,100);  
                     }
 #else
-                    if(direction==1)
+                    if(dir==1)
                         HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
                     else
                         HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
@@ -153,7 +158,6 @@ void breakTest()
     if(symb=='B')
     {
         HAL_UART_Transmit(&huart3,"Break\n\r",7,100);
-        breakCurrentPID.integralSaturation=0;
         setBreakStatus(BREAK);
     }
     if(symb=='R')
@@ -161,30 +165,15 @@ void breakTest()
         if(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_0)==1)
         {
             HAL_UART_Transmit(&huart3,"Break realise\n\r",15,100);
-            breakCurrentPID.integralSaturation=0;
             setBreakStatus(BREAK_DROP);
         }
     }
     if(symb=='S')
     {
         HAL_UART_Transmit(&huart3,"Break stop\n\r",12,100);
-        breakCurrentPID.integralSaturation=0;
         TIM9->CCR1=0;
         setBreakStatus(NO_BREAK);
-    }
-    /*if(counter>100)
-    {
-        currentAmp=getBrakeCurrent();
-        if(currentAmp<0)
-        {
-            currentAmp*=-1;
-            sprintf(string,"Current:-%d.%03d\n\r",(uint32_t)currentAmp, (uint16_t)((currentAmp - (uint32_t)currentAmp)*1000.) );
-        }
-        else
-            sprintf(string,"Current:%d.%03d\n\r",(uint32_t)currentAmp, (uint16_t)((currentAmp - (uint32_t)currentAmp)*1000.) );
-        HAL_UART_Transmit(&huart3,&string,strlen(string),100);
-        counter=0;
-    }*/
+    } 
     else
         counter++;
     if(getBreakStatus()==BREAK)

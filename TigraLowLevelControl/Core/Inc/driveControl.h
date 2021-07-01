@@ -27,8 +27,6 @@ typedef struct
     float kd;
     float prevError;
     float integralTerm;
-    float controllerSaturation;
-    float integralSaturation;
 }PIDHandle_t;
 
 typedef enum 
