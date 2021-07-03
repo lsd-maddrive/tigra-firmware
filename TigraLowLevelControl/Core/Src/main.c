@@ -720,7 +720,7 @@ void driveControlTask(void const * argument)
   #if ((!DRIVE_TEST || TEST_SPEED_CONRTOL_SYSTEM) && !BREAK_TEST)
     speedControlProcess();
   #endif 
-    osDelay(100);
+    osDelay(20);
   }
   /* USER CODE END driveControlTask */
 }

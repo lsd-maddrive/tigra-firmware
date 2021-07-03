@@ -1,7 +1,8 @@
 #include "driveControl.h"
 
 static brakeStatus_t breakFlag=NO_BREAK;
-static float refSpeed;
+static float refSpeed=0;
+static float prevSpeed=0;
 static float breakRefCurrent=BREAK_REF_CURRENT;
 static uint8_t reverse=1;
 
@@ -45,17 +46,20 @@ void speedControlProcess(void)
         HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
         SpeedPID.integralTerm=0;
         SpeedPID.prevError=0;
-        osDelay(100);
+        osDelay(50);
     }
     if(breakFlag==NO_BREAK)
     {
         if(reverse==1)
         {
-            HAL_GPIO_TogglePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin);
+            if(refSpeed>=0)
+                HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
+            else
+                HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
             SpeedPID.integralTerm=0;
             SpeedPID.prevError=0;
             reverse=0;
-            osDelay(100);
+            osDelay(50);
         }
         controlImpact=PIDController(&SpeedPID,refSpeed-getSpeed());
         if(controlImpact<0 && refSpeed<0)
@@ -164,29 +168,39 @@ float PIDController(PIDHandle_t * PID,float error)
  */
 void setReferenceSpeed(float speed)
 {
-    if(getSpeed()!=0)
+    if(breakFlag==NO_BREAK && refSpeed!=speed)
     {
-        if(sign(speed)!=sign(getSpeed()) || speed==0)
+        if(getSpeed()!=0)
         {
-            breakFlag=BREAK;
-            HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0);
-            SpeedPID.integralTerm=0;
-            breakRefCurrent=BREAK_REF_CURRENT;
-            if(sign(speed)!=sign(refSpeed))
-                reverse=1;
-            refSpeed=speed;
+            if(sign(speed)!=sign(getSpeed()) || speed==0)
+            {
+                breakFlag=BREAK;
+                HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0);
+                SpeedPID.integralTerm=0;
+                breakRefCurrent=BREAK_REF_CURRENT;
+                if(sign(speed)!=sign(refSpeed))
+                    reverse=1;
+                refSpeed=speed;
+            }
+            else if(sign(speed)==sign(getSpeed()) && sign(speed)==sign(refSpeed))
+            {
+                refSpeed=speed;
+            }
         }
-        else if(sign(speed)==sign(getSpeed()) && sign(speed)==sign(refSpeed))
-        {
-            refSpeed=speed;
-        }
-    }
-    else
+        else
         {
             refSpeed=speed;
             if(refSpeed<0)
                 reverse=1;
         }
+    }
+    else if ((breakFlag==BREAK || breakFlag==BREAK_DROP) && refSpeed!=speed)
+    {
+        if(sign(speed)!=sign(refSpeed))
+            reverse=1;
+        refSpeed=speed;
+    }
+    
 }
 
 /**
