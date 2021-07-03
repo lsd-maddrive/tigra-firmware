@@ -29,6 +29,11 @@ extern UART_HandleTypeDef huart3;
 
         void init()
         {
+            if(this->tcpConnection!=NULL)
+            {
+                netconn_delete(this->tcpConnection);
+                printDebugMessage((uint8_t*)"Delete TCP connection...\n\r");
+            }
             this->startTime=HAL_GetTick();
             printDebugMessage((uint8_t*)"TCP connection...\n\r");
             IP4_ADDR(&this->ServerIPaddr, 192,168,10,1);

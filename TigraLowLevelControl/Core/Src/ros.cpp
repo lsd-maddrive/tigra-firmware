@@ -17,12 +17,7 @@
 
 osThreadId ROSSpinThreadHandle;
 ros::NodeHandle ros_node;
-
-
-// ros::Subscriber<std_msgs::Int8>       topic_speed( "speed_perc", &speed_cb);
-// ros::Subscriber<std_msgs::Int8>       topic_steer( "steer_perc", &steer_cb);
-// ros::Subscriber<std_msgs::UInt8>      topic_mode( "mode_status", mode_cb );
-//=======================================================
+uint16_t reciveWachdog=0;
 
 void ROSReciveFeedback(const tigra_msgs::TigraState &msg)
 {
@@ -30,6 +25,7 @@ void ROSReciveFeedback(const tigra_msgs::TigraState &msg)
     // sprintf(str,"ROS Speed:%d Angle:%d\n\r",(int)msg.rotation_speed,(int)msg.angle_steering);
     // printDebugMessage((uint8_t*)str);
     setReferenceSpeed((float)msg.rotation_speed*RAD_S_TO_RPM);
+    reciveWachdog=0;
 }
 
 ros::Subscriber<tigra_msgs::TigraState> topicInSpeed("state_cmd", &ROSReciveFeedback);
@@ -45,8 +41,7 @@ void ROSSpinThreadTask(void const * argument)
     uint16_t timer=0;
     while(true)
     {
-
-        if(timer==10)
+        if(timer==5)
         {
             timer=0;
             ///outSpeed.data=(int)getSpeed();
@@ -58,6 +53,17 @@ void ROSSpinThreadTask(void const * argument)
         }
         else
             timer++;
+        if(reciveWachdog==100)
+        {
+            setReferenceSpeed(0);
+            rosInit();
+            printDebugMessage((uint8_t*)"TCP connection close\n\r");
+            reciveWachdog=0;
+        }
+        else
+        {
+            reciveWachdog++;
+        }
         ros_node.spinOnce();
         osDelay(10);
     }
