@@ -86,8 +86,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define DRIVE_REVERSE_Pin GPIO_PIN_2
-#define DRIVE_REVERSE_GPIO_Port GPIOE
+#define DRIVE_REVERSE_Pin GPIO_PIN_13
+#define DRIVE_REVERSE_GPIO_Port GPIOG
 #define BREAK_DIRECTION_R_Pin GPIO_PIN_3
 #define BREAK_DIRECTION_R_GPIO_Port GPIOE
 #define BREAK_DIRECTION_L_Pin GPIO_PIN_4
@@ -95,8 +95,8 @@ void Error_Handler(void);
 #define BREAK_LOW_Pin GPIO_PIN_0
 #define BREAK_LOW_GPIO_Port GPIOF
 #define BREAK_LOW_EXTI_IRQn EXTI0_IRQn
-#define ENABLE_INDICATOR_Pin GPIO_PIN_1
-#define ENABLE_INDICATOR_GPIO_Port GPIOG
+#define ENABLE_INDICATOR_Pin GPIO_PIN_11
+#define ENABLE_INDICATOR_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

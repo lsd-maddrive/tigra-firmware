@@ -8,10 +8,12 @@
 #include <std_msgs/UInt8.h>
 #include <std_msgs/Int8.h>
 #include <std_msgs/String.h>
+#include <tigra_msgs/TigraState.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
+#define RAD_S_TO_RPM 9.55
 
 osThreadId ROSSpinThreadHandle;
 ros::NodeHandle ros_node;
@@ -22,21 +24,18 @@ ros::NodeHandle ros_node;
 // ros::Subscriber<std_msgs::UInt8>      topic_mode( "mode_status", mode_cb );
 //=======================================================
 
-/*void ROSspeedReciveFeedback(const std_msgs::Int8 &msg)
+void ROSReciveFeedback(const tigra_msgs::TigraState &msg)
 {
-    char str[50];
-    if((int)msg.data<0)
-    {
-        sprintf(str,"ROS Speed:-%d\n\r",(int)msg.data);
-    }
-    else
-        sprintf(str,"ROS Speed:%d\n\r",(int)msg.data);
-    printDebugMessage((uint8_t*)str);
-}*/
+    // char str[50];
+    // sprintf(str,"ROS Speed:%d Angle:%d\n\r",(int)msg.rotation_speed,(int)msg.angle_steering);
+    // printDebugMessage((uint8_t*)str);
+    setReferenceSpeed((float)msg.rotation_speed*RAD_S_TO_RPM);
+}
 
-//ros::Subscriber<std_msgs::Int8> topicInSpeed("InSpeed", &ROSspeedReciveFeedback);
-std_msgs::String outSpeed;
-ros::Publisher topicOutSpeed("topicOutSpeed", &outSpeed);
+ros::Subscriber<tigra_msgs::TigraState> topicInSpeed("state_cmd", &ROSReciveFeedback);
+tigra_msgs::TigraState outMsg;
+ros::Publisher topicOutSpeed("state", &outMsg);
+
 
 /*
  * ROS spin thread - used to receive messages
@@ -46,14 +45,16 @@ void ROSSpinThreadTask(void const * argument)
     uint16_t timer=0;
     while(true)
     {
-        GPIOB->MODER|=GPIO_MODER_MODER7_0;
-        GPIOB->BSRR=GPIO_BSRR_BS_7;
-        if(timer==50)
+
+        if(timer==10)
         {
             timer=0;
             ///outSpeed.data=(int)getSpeed();
-            outSpeed.data = "hello";
-            topicOutSpeed.publish(&outSpeed);
+            outMsg.angle_steering=0;
+            outMsg.rotation_speed=getSpeed()/RAD_S_TO_RPM;
+            outMsg.stamp.sec=HAL_GetTick()/1000;
+            outMsg.stamp.nsec=(HAL_GetTick()%1000)*1000000;
+            topicOutSpeed.publish(&outMsg);
         }
         else
             timer++;
@@ -70,9 +71,9 @@ void rosInit()
     /* ROS publishers */
     ros_node.advertise(topicOutSpeed);
     /* ROS subscribers */
-    //ros_node.subscribe(topicInSpeed);
+    ros_node.subscribe(topicInSpeed);
     /* ROS service client */
-    osThreadDef(ROSSpinThread, ROSSpinThreadTask, osPriorityAboveNormal, 0, 1024);
+    osThreadDef(ROSSpinThread, ROSSpinThreadTask, osPriorityAboveNormal, 0, 2048);
     ROSSpinThreadHandle = osThreadCreate(osThread(ROSSpinThread), NULL);
 
     /* Main ROS thread */

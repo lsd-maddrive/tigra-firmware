@@ -1994,7 +1994,7 @@
  * SO_RCVTIMEO processing.
  */
 #if !defined LWIP_SO_RCVTIMEO || defined __DOXYGEN__
-#define LWIP_SO_RCVTIMEO                0
+#define LWIP_SO_RCVTIMEO                1
 #endif
 
 /**

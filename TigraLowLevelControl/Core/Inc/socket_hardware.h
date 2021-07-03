@@ -8,9 +8,14 @@ extern "C"
 
 #include <math.h>
 #include "main.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #define CONNECTION_PORT 80
-#define SERVER_PORT 23456 
+#define SERVER_PORT 23456
+
+extern UART_HandleTypeDef huart3;
 
     class SocketHardware
     {
@@ -30,6 +35,7 @@ extern "C"
             this->tcpConnection = netconn_new(NETCONN_TCP);
             if(this->tcpConnection!=NULL)
             {
+                this->tcpConnection->recv_timeout = 10;
                 this->error = netconn_bind(this->tcpConnection, NULL, 80);
                 if(this->error==ERR_OK)
                 {
@@ -64,31 +70,33 @@ extern "C"
             static uint8_t* buf;
             static uint16_t buflen = 0;
             static uint16_t readStep = 0;
+            static uint8_t nextBuffFlag=0;
             if(readStep==0)
             {
-                reciveError = netconn_recv(this->tcpConnection, &inbuf);
-                if(reciveError==ERR_OK) 
+                if(nextBuffFlag==0)
                 {
+                    reciveError = netconn_recv(this->tcpConnection, &inbuf);
+
+                }
+                if(reciveError==ERR_OK || nextBuffFlag==1)  
+                {
+                    nextBuffFlag=0;
                     netbuf_data(inbuf, (void**)&buf, &buflen);
-                    retBuff=buf[readStep];
-                    readStep++;
                 } 
                 else
-                {
-                    printDebugMessage((uint8_t*)"Recive error\n\r"); 
+                { 
                     return -1;
                 }
             }
-            else
+            retBuff=buf[readStep];
+            readStep++;
+            if(readStep==(buflen)) 
             {
-                retBuff=buf[readStep];
-                readStep++;
-                if(readStep==buflen) 
-                {
-                    readStep=0;
-                    if(!(netbuf_next(inbuf) >= 0))
-                        netbuf_delete(inbuf);
-                }
+                readStep=0;
+                if(!(netbuf_next(inbuf) >= 0))
+                    netbuf_delete(inbuf);
+                else
+                    nextBuffFlag=1;
             }
             return retBuff;
         }
@@ -97,7 +105,14 @@ extern "C"
         {
             // TODO - reimplement with uC stack
             err_t sentError;
+            int err;
+            char str[100];
+            // sprintf(str,"begin_write:%d\n\r",length);
+            // HAL_UART_Transmit(&huart3,(uint8_t *)str,strlen((const char*)str),100);
             sentError=netconn_write(this->tcpConnection,data,length,NETCONN_COPY);
+            err=sentError*-1;
+            // sprintf(str,"%d_write:%d\n\r",err,length);
+            // HAL_UART_Transmit(&huart3,(uint8_t *)str,strlen((const char*)str),100);
             if(sentError!=ERR_OK)
             {
                printDebugMessage((uint8_t*)"Transmitt failed\n\r"); 

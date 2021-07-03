@@ -707,7 +707,7 @@ void driveControlTask(void const * argument)
 {
   /* USER CODE BEGIN driveControlTask */
   float refSpeed=0;
-  HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,1);
+  HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,0);
   TIM9->CCR1=0;
   HAL_TIM_PWM_Start(&htim9, TIM_CHANNEL_1);
   if(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_0)==1)
