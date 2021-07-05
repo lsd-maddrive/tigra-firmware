@@ -5,6 +5,7 @@ extern DAC_HandleTypeDef hdac;
 extern ADC_HandleTypeDef hadc1;
 
 extern PIDHandle_t breakCurrentPID;
+extern UART_HandleTypeDef huart1;
 
 /**
  * @brief   Print debug message to UART3
@@ -35,6 +36,7 @@ void testProcess(void)
 {
     static uint16_t counter1;
     static uint16_t counter2;
+    uint8_t string[20];
 #if ENCODER_TEST
     if(counter1>50)
     {
@@ -44,11 +46,22 @@ void testProcess(void)
     else
         counter1++;
 #endif
-#if DRIVE_TEST && !BREAK_TEST
+#if DRIVE_TEST && !BREAK_TEST && !RUDDER_COMMUNICATION_TEST
     driveTest();
 #endif
-#if BREAK_TEST && !DRIVE_TEST
+#if BREAK_TEST && !DRIVE_TEST && !RUDDER_COMMUNICATION_TEST
     breakTest(); 
+#endif
+#if RUDDER_COMMUNICATION_TEST && !DRIVE_TEST && !BREAK_TEST
+    rudderCommunicationTest(); 
+    if(counter2>50)
+    {
+        counter2=0;
+        sprintf(string,"Current angle:%d\n\r",getAngle());
+        HAL_UART_Transmit(&huart3,&string,strlen(string),100);
+    } 
+    else
+        counter2++;
 #endif
     osDelay(10);
 }
@@ -183,4 +196,64 @@ void breakTest()
         currentControl(BREAK_REF_CURRENT);
     else if (getBreakStatus()==BREAK_DROP)
         currentControl(-1*BREAK_REF_CURRENT);
+}
+
+void rudderCommunicationTest(void)
+{
+    uint8_t i;
+    uint16_t j;
+    static uint8_t state=0;
+    static uint8_t str[10];
+    uint8_t rotateAngle=0;
+    int8_t sendAngle;
+    static uint8_t dir;
+    HAL_StatusTypeDef reciveStatus;
+    reciveStatus=HAL_UART_Receive(&huart3,&i,1,1);
+    str[state]=i;  
+    if((str[state]=='+' || str[state]=='-') && state==0)
+    {
+        HAL_UART_Transmit(&huart3,"Print rotate angle\n\r",17,100); 
+        if(str[state]=='-')
+        {
+            dir=1;
+        }
+        if(str[state]=='+')
+        {
+            dir=0;
+        }
+        state++;
+    }  
+    else
+    {
+    if(state>0 && reciveStatus==HAL_OK)
+    {
+        state++;
+        if((str[state-1]>=0x30 && str[state-1]<=0x39) || str[state-1]=='\r' || str[state-1]=='\n')
+        {
+            if(str[state-1]=='\r')
+            {
+                for(j=state-1;j>1;j--)
+                {
+                    rotateAngle+=(str[j-1]-48)*powINT(10,state-1-j);
+                }
+                state=0;
+                if(rotateAngle>127)
+                    HAL_UART_Transmit(&huart3,"Incorrect value\n\r",17,100); 
+                else
+                {
+                    sendAngle=(int8_t)rotateAngle;
+                    if(dir==1)
+                        sendAngle*=-1;
+                    HAL_UART_Transmit(&huart1,&sendAngle,sizeof(int8_t),100);
+                    HAL_UART_Transmit(&huart3,"Value set\n\r",15,100); 
+                }
+            }
+        }
+        else
+        {
+            state=0;
+            HAL_UART_Transmit(&huart3,"Incorrect symbol\n\r",18,100); 
+        }
+    }
+}
 }

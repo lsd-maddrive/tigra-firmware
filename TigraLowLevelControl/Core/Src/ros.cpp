@@ -14,6 +14,7 @@
 #include <stdlib.h>
 
 #define RAD_S_TO_RPM 9.55
+#define RAD_TO_DEG 57.3
 
 osThreadId ROSSpinThreadHandle;
 ros::NodeHandle ros_node;
@@ -25,6 +26,7 @@ void ROSReciveFeedback(const tigra_msgs::TigraState &msg)
     // sprintf(str,"ROS Speed:%d Angle:%d\n\r",(int)msg.rotation_speed,(int)msg.angle_steering);
     // printDebugMessage((uint8_t*)str);
     setReferenceSpeed((float)msg.rotation_speed*RAD_S_TO_RPM);
+    sendReferenceAngle((float)msg.angle_steering*RAD_TO_DEG);
     reciveWachdog=0;
 }
 
@@ -45,7 +47,7 @@ void ROSSpinThreadTask(void const * argument)
         {
             timer=0;
             ///outSpeed.data=(int)getSpeed();
-            outMsg.angle_steering=0;
+            outMsg.angle_steering=(float)getAngle();
             outMsg.rotation_speed=getSpeed()/RAD_S_TO_RPM;
             outMsg.stamp.sec=HAL_GetTick()/1000;
             outMsg.stamp.nsec=(HAL_GetTick()%1000)*1000000;

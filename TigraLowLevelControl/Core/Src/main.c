@@ -61,6 +61,7 @@ osThreadId hardwareTestHandle;
 osMessageQId driveDataHandle;
 /* USER CODE BEGIN PV */
 struct netif gnetif;
+extern uint8_t uartByte;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -597,20 +598,13 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port, DRIVE_REVERSE_Pin, GPIO_PIN_SET);
-
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOE, BREAK_DIRECTION_R_Pin|BREAK_DIRECTION_L_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port, ENABLE_INDICATOR_Pin, GPIO_PIN_SET);
 
-  /*Configure GPIO pin : DRIVE_REVERSE_Pin */
-  GPIO_InitStruct.Pin = DRIVE_REVERSE_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(DRIVE_REVERSE_GPIO_Port, &GPIO_InitStruct);
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port, DRIVE_REVERSE_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pins : BREAK_DIRECTION_R_Pin BREAK_DIRECTION_L_Pin */
   GPIO_InitStruct.Pin = BREAK_DIRECTION_R_Pin|BREAK_DIRECTION_L_Pin;
@@ -631,6 +625,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(ENABLE_INDICATOR_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : DRIVE_REVERSE_Pin */
+  GPIO_InitStruct.Pin = DRIVE_REVERSE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(DRIVE_REVERSE_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);
@@ -691,7 +692,8 @@ void DefaultTaskTask(void const * argument)
   /* Infinite loop */
   for(;;)
   { 
-    osDelay(1000);
+    HAL_UART_Receive_IT(&huart1,&uartByte,1);
+    osDelay(1);
   }
   /* USER CODE END 5 */
 }
@@ -706,6 +708,7 @@ void DefaultTaskTask(void const * argument)
 void driveControlTask(void const * argument)
 {
   /* USER CODE BEGIN driveControlTask */
+  uint8_t str;
   float refSpeed=0;
   HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,0);
   TIM9->CCR1=0;
@@ -717,7 +720,7 @@ void driveControlTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-  #if ((!DRIVE_TEST || TEST_SPEED_CONRTOL_SYSTEM) && !BREAK_TEST)
+  #if ((!DRIVE_TEST || TEST_SPEED_CONRTOL_SYSTEM) && !BREAK_TEST && !RUDDER_COMMUNICATION_TEST)
     speedControlProcess();
   #endif 
     osDelay(20);

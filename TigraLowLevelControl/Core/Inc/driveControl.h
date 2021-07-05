@@ -46,5 +46,8 @@ void breakRealise(void);
 void setBreakStatus(brakeStatus_t status);
 brakeStatus_t getBreakStatus(void);
 float getBrakeCurrent(void);
+void reciveAngle(uint8_t byte);
+int8_t getAngle(void);
+void sendReferenceAngle(float refAngle);
 
 #endif

@@ -2,13 +2,15 @@
 
 static brakeStatus_t breakFlag=NO_BREAK;
 static float refSpeed=0;
-static float prevSpeed=0;
+static int8_t currentAngle;
 static float breakRefCurrent=BREAK_REF_CURRENT;
 static uint8_t reverse=1;
+uint8_t uartByte;
 
 extern DAC_HandleTypeDef hdac;
 extern ADC_HandleTypeDef hadc1;
 extern TIM_HandleTypeDef htim9;
+extern UART_HandleTypeDef huart1;
 
 PIDHandle_t SpeedPID=
   {
@@ -239,4 +241,46 @@ float getBrakeCurrent(void)
     if(currentAmp<0.1 && currentAmp>-0.1)
         currentAmp=0;
     return -1*currentAmp;
+}
+
+/**
+ * @brief   Recive wheels angle from UART1.
+ */
+void reciveAngle(uint8_t byte)
+{
+    static uint8_t state=0;
+    if(byte==0x1 && state==0)
+    {
+        state++;
+    }
+    else if(state==1)
+    {
+        currentAngle=(int8_t)byte;
+        state=0;
+    }
+}
+
+/**
+ * @brief   get current wheels angle.
+ */
+int8_t getAngle(void)
+{
+    return currentAngle;
+}
+
+/**
+ * @brief   send reference angle to rudder control system;
+ */
+void sendReferenceAngle(float refAngle)
+{
+    int8_t angle = (int8_t)refAngle;
+    HAL_UART_Transmit(&huart1,&angle,sizeof(int8_t),100);
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if(huart==&huart1)
+    {
+        reciveAngle(uartByte);
+    }
 }
