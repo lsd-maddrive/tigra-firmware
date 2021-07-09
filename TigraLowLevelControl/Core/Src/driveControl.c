@@ -42,39 +42,48 @@ float sign(float a){
 void speedControlProcess(void)
 {
     float controlImpact;
-    if(refSpeed==0)
+    if(breakFlag!=EMERGANSY_BRAKE)
     {
-        HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0); 
-        HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
-        SpeedPID.integralTerm=0;
-        SpeedPID.prevError=0;
-        osDelay(50);
-    }
-    if(breakFlag==NO_BREAK)
-    {
-        if(reverse==1)
+        if(refSpeed==0)
         {
-            if(refSpeed>=0)
-                HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
-            else
-                HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
+            HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0); 
+            HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
             SpeedPID.integralTerm=0;
             SpeedPID.prevError=0;
-            reverse=0;
             osDelay(50);
         }
-        controlImpact=PIDController(&SpeedPID,refSpeed-getSpeed());
-        if(controlImpact<0 && refSpeed<0)
-            controlImpact*=-1;   
-        if(controlImpact<0)
-            controlImpact=0;
-        if(controlImpact!=0)
-            controlImpact+=1500;
-        HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)controlImpact);  
+        if(breakFlag==NO_BREAK)
+        {
+            if(reverse==1)
+            {
+                if(refSpeed>=0)
+                    HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
+                else
+                    HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
+                SpeedPID.integralTerm=0;
+                SpeedPID.prevError=0;
+                reverse=0;
+                osDelay(50);
+            }
+            controlImpact=PIDController(&SpeedPID,refSpeed-getSpeed());
+            if(controlImpact<0 && refSpeed<0)
+                controlImpact*=-1;   
+            if(controlImpact<0)
+                controlImpact=0;
+            if(controlImpact!=0)
+                controlImpact+=1500;
+            HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)controlImpact);  
+        }
+        else
+        {
+            breakControl();
+        }   
     }
     else
     {
-        breakControl();
+        HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0); 
+        HAL_GPIO_WritePin(EMERGANSY_BREAK_INDICATOR_GPIO_Port,EMERGANSY_BREAK_INDICATOR_Pin,0);
+        HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,1);
     }   
 }
 

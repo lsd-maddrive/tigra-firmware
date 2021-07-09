@@ -46,7 +46,10 @@ extern UART_HandleTypeDef huart3;
                 {
                     this->error=netconn_connect(this->tcpConnection, &this->ServerIPaddr, SERVER_PORT);
                     if(this->error==ERR_OK)
+                    {
                         printDebugMessage((uint8_t*)"Connected\n\r");
+                        HAL_GPIO_WritePin(ROS_CONNECT_INDICATOR_GPIO_Port,ROS_CONNECT_INDICATOR_Pin,(GPIO_PinState)0);
+                    }
                     else   
                         printDebugMessage((uint8_t*)"Server not connected\n\r");
                 }

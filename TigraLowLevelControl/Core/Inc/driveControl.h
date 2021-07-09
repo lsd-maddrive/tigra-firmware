@@ -33,7 +33,8 @@ typedef enum
 {
     NO_BREAK,//No break state
     BREAK,//Break state
-    BREAK_DROP//Return the break
+    BREAK_DROP,//Return the break
+    EMERGANSY_BRAKE
 }brakeStatus_t;
 
 

@@ -63,7 +63,7 @@ extern UART_HandleTypeDef huart1;
 extern TIM_HandleTypeDef htim14;
 
 /* USER CODE BEGIN EV */
-
+uint8_t emergensyBrakeFlag=0;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -176,6 +176,54 @@ void EXTI0_IRQHandler(void)
   /* USER CODE BEGIN EXTI0_IRQn 1 */
   breakRealise();
   /* USER CODE END EXTI0_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI line1 interrupt.
+  */
+void EXTI1_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI1_IRQn 0 */
+  emergensyBrakeFlag=1;
+  /* USER CODE END EXTI1_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
+  /* USER CODE BEGIN EXTI1_IRQn 1 */
+  if((GPIOF->IDR & 0x01) == 0)
+  {
+    setBreakStatus(EMERGANSY_BRAKE);
+  }
+  /* USER CODE END EXTI1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI line2 interrupt.
+  */
+void EXTI2_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI2_IRQn 0 */
+  static uint8_t state=0;
+  /* USER CODE END EXTI2_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
+  emergensyBrakeFlag=1;
+  /* USER CODE BEGIN EXTI2_IRQn 1 */
+  /*if((GPIOF->IDR & 0x02) != 0!=RESET)
+  {
+    if((GPIOF->IDR & 0x04) == 0 && state==0)
+    {
+      state++;
+    } 
+    else if((GPIOF->IDR & 0x04) != 0 && state==1)
+    {
+      state=0;
+      if(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_0)==1)
+      {
+        setBreakStatus(BREAK_DROP);
+      }
+      HAL_GPIO_WritePin(EMERGANSY_BREAK_INDICATOR_GPIO_Port,EMERGANSY_BREAK_INDICATOR_Pin,1);
+      HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,0);
+    }
+  }*/
+  /* USER CODE END EXTI2_IRQn 1 */
 }
 
 /**

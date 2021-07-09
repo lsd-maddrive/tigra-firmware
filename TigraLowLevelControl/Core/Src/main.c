@@ -58,10 +58,12 @@ osThreadId DefaultTaskHandle;
 osThreadId driveControlHandle;
 osThreadId lightControlHandle;
 osThreadId hardwareTestHandle;
+osThreadId buttonProcessHandle;
 osMessageQId driveDataHandle;
 /* USER CODE BEGIN PV */
 struct netif gnetif;
 extern uint8_t uartByte;
+extern uint8_t emergensyBrakeFlag;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -79,6 +81,7 @@ void DefaultTaskTask(void const * argument);
 void driveControlTask(void const * argument);
 void lightControlTask(void const * argument);
 void hardwareTestTask(void const * argument);
+void buttonProcessTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -112,7 +115,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  HAL_Delay(500);
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -168,6 +171,10 @@ int main(void)
   /* definition and creation of hardwareTest */
   osThreadDef(hardwareTest, hardwareTestTask, osPriorityAboveNormal, 0, 512);
   hardwareTestHandle = osThreadCreate(osThread(hardwareTest), NULL);
+
+  /* definition and creation of buttonProcess */
+  osThreadDef(buttonProcess, buttonProcessTask, osPriorityAboveNormal, 0, 256);
+  buttonProcessHandle = osThreadCreate(osThread(buttonProcess), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -601,7 +608,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOE, BREAK_DIRECTION_R_Pin|BREAK_DIRECTION_L_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port, ENABLE_INDICATOR_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOF, ROS_CONNECT_INDICATOR_Pin|EMERGANSY_BREAK_INDICATOR_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOG, ENABLE_INDICATOR_Pin|TURN_SIGNAL_RIGHT_Pin|TURN_SIGNAL_LEFT_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port, DRIVE_REVERSE_Pin, GPIO_PIN_SET);
@@ -613,22 +623,35 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : BREAK_LOW_Pin */
-  GPIO_InitStruct.Pin = BREAK_LOW_Pin;
+  /*Configure GPIO pins : BREAK_LOW_Pin EMERGANSY_BREAK_Pin */
+  GPIO_InitStruct.Pin = BREAK_LOW_Pin|EMERGANSY_BREAK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(BREAK_LOW_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : ENABLE_INDICATOR_Pin */
-  GPIO_InitStruct.Pin = ENABLE_INDICATOR_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  /*Configure GPIO pin : BREAK_RESET_Pin */
+  GPIO_InitStruct.Pin = BREAK_RESET_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(BREAK_RESET_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : ROS_CONNECT_INDICATOR_Pin EMERGANSY_BREAK_INDICATOR_Pin */
+  GPIO_InitStruct.Pin = ROS_CONNECT_INDICATOR_Pin|EMERGANSY_BREAK_INDICATOR_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(ENABLE_INDICATOR_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : ENABLE_INDICATOR_Pin TURN_SIGNAL_RIGHT_Pin TURN_SIGNAL_LEFT_Pin */
+  GPIO_InitStruct.Pin = ENABLE_INDICATOR_Pin|TURN_SIGNAL_RIGHT_Pin|TURN_SIGNAL_LEFT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
   /*Configure GPIO pin : DRIVE_REVERSE_Pin */
   GPIO_InitStruct.Pin = DRIVE_REVERSE_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(DRIVE_REVERSE_GPIO_Port, &GPIO_InitStruct);
@@ -636,6 +659,12 @@ static void MX_GPIO_Init(void)
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI2_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
 
 }
 
@@ -711,6 +740,11 @@ void driveControlTask(void const * argument)
   uint8_t str;
   float refSpeed=0;
   HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,0);
+  // HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
+  // HAL_GPIO_WritePin(ROS_CONNECT_INDICATOR_GPIO_Port,ROS_CONNECT_INDICATOR_Pin,0);
+  // HAL_GPIO_WritePin(EMERGANSY_BREAK_INDICATOR_GPIO_Port,EMERGANSY_BREAK_INDICATOR_Pin,0);
+  // HAL_GPIO_WritePin(TURN_SIGNAL_LEFT_GPIO_Port,TURN_SIGNAL_LEFT_Pin,0);
+  // HAL_GPIO_WritePin(TURN_SIGNAL_RIGHT_GPIO_Port,TURN_SIGNAL_RIGHT_Pin,0);
   TIM9->CCR1=0;
   HAL_TIM_PWM_Start(&htim9, TIM_CHANNEL_1);
   if(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_0)==1)
@@ -738,10 +772,25 @@ void driveControlTask(void const * argument)
 void lightControlTask(void const * argument)
 {
   /* USER CODE BEGIN lightControlTask */
+  int8_t angle;
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    angle=getAngle();
+    if(angle<2 && angle>-2)
+    {
+      HAL_GPIO_WritePin(TURN_SIGNAL_LEFT_GPIO_Port,TURN_SIGNAL_LEFT_Pin,1);
+      HAL_GPIO_WritePin(TURN_SIGNAL_RIGHT_GPIO_Port,TURN_SIGNAL_RIGHT_Pin,1);
+    }
+    else if(angle>2)
+    {
+      HAL_GPIO_TogglePin(TURN_SIGNAL_RIGHT_GPIO_Port,TURN_SIGNAL_RIGHT_Pin);
+    }
+    else if(angle<-2)
+    {
+      HAL_GPIO_TogglePin(TURN_SIGNAL_LEFT_GPIO_Port,TURN_SIGNAL_LEFT_Pin);
+    }
+    osDelay(500);
   }
   /* USER CODE END lightControlTask */
 }
@@ -762,6 +811,44 @@ void hardwareTestTask(void const * argument)
     testProcess();
   }
   /* USER CODE END hardwareTestTask */
+}
+
+/* USER CODE BEGIN Header_buttonProcessTask */
+/**
+* @brief Function implementing the buttonProcess thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_buttonProcessTask */
+void buttonProcessTask(void const * argument)
+{
+  /* USER CODE BEGIN buttonProcessTask */
+  uint8_t state=0;
+  /* Infinite loop */
+  for(;;)
+  {
+    if(emergensyBrakeFlag==1)
+    {
+      if((GPIOF->IDR & 0x04) == 0 && state==0)
+      {
+        state++;
+        emergensyBrakeFlag=0;
+      } 
+      else if((GPIOF->IDR & 0x04) != 0 && state==1)
+      {
+        state=0;
+        if(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_0)==1)
+        {
+          setBreakStatus(BREAK_DROP);
+        }
+        HAL_GPIO_WritePin(EMERGANSY_BREAK_INDICATOR_GPIO_Port,EMERGANSY_BREAK_INDICATOR_Pin,1);
+        HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,0);
+        emergensyBrakeFlag=0;
+      }
+    }
+    osDelay(10);
+  }
+  /* USER CODE END buttonProcessTask */
 }
 
  /**
