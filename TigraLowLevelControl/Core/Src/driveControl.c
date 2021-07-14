@@ -5,6 +5,7 @@ static float refSpeed=0;
 static int8_t currentAngle;
 static float breakRefCurrent=BREAK_REF_CURRENT;
 static uint8_t reverse=1;
+static uint8_t reverseState=0;
 uint8_t uartByte;
 
 extern DAC_HandleTypeDef hdac;
@@ -46,24 +47,32 @@ void speedControlProcess(void)
     {
         if(refSpeed==0)
         {
+            osDelay(100);
             HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0); 
             HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
             SpeedPID.integralTerm=0;
             SpeedPID.prevError=0;
-            osDelay(500);
+            osDelay(100);
         }
         if(breakFlag==NO_BREAK)
         {
             if(reverse==1)
             {
+                //osDelay(750);
                 if(refSpeed>=0)
+                {
                     HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
+                    reverseState=0;
+                }
                 else
+                {
+                    reverseState=1;
                     HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
+                }
                 SpeedPID.integralTerm=0;
                 SpeedPID.prevError=0;
-                reverse=0;
                 osDelay(500);
+                reverse=0;
             }
             controlImpact=PIDController(&SpeedPID,refSpeed-getSpeed());
             if(controlImpact<0 && refSpeed<0)
@@ -201,8 +210,20 @@ void setReferenceSpeed(float speed)
         else
         {
             refSpeed=speed;
-            if(refSpeed<0)
-                reverse=1;
+            if((refSpeed<0 && reverseState==0) || (refSpeed>=0 && reverseState==1))
+            {
+                osDelay(1000);
+                if(getSpeed()==0)
+                    reverse=1;
+                else
+                {
+                    breakFlag=BREAK;
+                    HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0);
+                    SpeedPID.integralTerm=0;
+                    breakRefCurrent=BREAK_REF_CURRENT; 
+                    refSpeed=0; 
+                }
+            }
         }
     }
     else if ((breakFlag==BREAK || breakFlag==BREAK_DROP) && refSpeed!=speed)

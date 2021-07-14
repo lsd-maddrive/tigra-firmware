@@ -785,10 +785,12 @@ void lightControlTask(void const * argument)
     else if(angle>2)
     {
       HAL_GPIO_TogglePin(TURN_SIGNAL_RIGHT_GPIO_Port,TURN_SIGNAL_RIGHT_Pin);
+      HAL_GPIO_WritePin(TURN_SIGNAL_LEFT_GPIO_Port,TURN_SIGNAL_LEFT_Pin,1);
     }
     else if(angle<-2)
     {
       HAL_GPIO_TogglePin(TURN_SIGNAL_LEFT_GPIO_Port,TURN_SIGNAL_LEFT_Pin);
+      HAL_GPIO_WritePin(TURN_SIGNAL_RIGHT_GPIO_Port,TURN_SIGNAL_RIGHT_Pin,1);
     }
     osDelay(500);
   }
@@ -827,26 +829,27 @@ void buttonProcessTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    if(emergensyBrakeFlag==1)
-    {
-      if((GPIOF->IDR & 0x04) == 0 && state==0)
-      {
-        state++;
-        emergensyBrakeFlag=0;
-      } 
-      else if((GPIOF->IDR & 0x04) != 0 && state==1)
-      {
-        state=0;
-        if(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_0)==1)
-        {
-          setBreakStatus(BREAK_DROP);
-        }
-        HAL_GPIO_WritePin(EMERGANSY_BREAK_INDICATOR_GPIO_Port,EMERGANSY_BREAK_INDICATOR_Pin,1);
-        HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,0);
-        emergensyBrakeFlag=0;
-      }
-    }
-    osDelay(10);
+    alphaFilter();
+    // if(emergensyBrakeFlag==1)
+    // {
+    //   if((GPIOF->IDR & 0x04) == 0 && state==0)
+    //   {
+    //     state++;
+    //     emergensyBrakeFlag=0;
+    //   } 
+    //   else if((GPIOF->IDR & 0x04) != 0 && state==1)
+    //   {
+    //     state=0;
+    //     if(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_0)==1)
+    //     {
+    //       setBreakStatus(BREAK_DROP);
+    //     }
+    //     HAL_GPIO_WritePin(EMERGANSY_BREAK_INDICATOR_GPIO_Port,EMERGANSY_BREAK_INDICATOR_Pin,1);
+    //     HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,0);
+    //     emergensyBrakeFlag=0;
+    //   }
+    // }
+    // osDelay(10);
   }
   /* USER CODE END buttonProcessTask */
 }

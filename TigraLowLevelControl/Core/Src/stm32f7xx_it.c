@@ -204,7 +204,7 @@ void EXTI2_IRQHandler(void)
   static uint8_t state=0;
   /* USER CODE END EXTI2_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
-  emergensyBrakeFlag=1;
+  // emergensyBrakeFlag=1;
   /* USER CODE BEGIN EXTI2_IRQn 1 */
   /*if((GPIOF->IDR & 0x02) != 0!=RESET)
   {

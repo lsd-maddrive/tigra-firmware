@@ -5,6 +5,7 @@ static uint16_t encoderCount;
 static uint8_t statusFlag=0;
 static uint16_t encoderPeriod;
 static uint8_t direction;
+static float filteredSpeed=0;;
 extern TIM_HandleTypeDef htim4;
 uint16_t countInt=0;
 /**
@@ -68,4 +69,23 @@ float getSpeed(void)
 		return speed;
 	}
 	return 0;
+}
+
+/**
+ * @brief	Alpha filter function
+ */
+void alphaFilter(void)
+{
+	static float prevFilteredSpeed=0;
+	filteredSpeed=prevFilteredSpeed*(1-ALPHA)+getSpeed()*ALPHA;
+	prevFilteredSpeed=filteredSpeed;
+	osDelay(ALPHA_FILTER_PERIOD);
+}
+
+/**
+ * @brief	Filtered speed get function
+ */
+float getFilteredSpeed(void)
+{
+	return filteredSpeed;
 }

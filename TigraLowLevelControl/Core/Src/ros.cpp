@@ -26,10 +26,11 @@ void ROSReciveFeedback(const tigra_msgs::TigraState &msg)
     // char str[50];
     // sprintf(str,"ROS Speed:%d Angle:%d\n\r",(int)msg.rotation_speed,(int)msg.angle_steering);
     // printDebugMessage((uint8_t*)str);
-    float speed=getSpeed();
+    //float speed=getSpeed();
+    float speed=getFilteredSpeed();
     float angle=msg.angle_steering*RAD_TO_DEG;
     setReferenceSpeed((float)msg.rotation_speed*RAD_S_TO_RPM);
-    if(speed>=5 || speed<=-5)
+    if(speed>=10 || speed<=-10)
     {
         if(angle>25) angle=25;
         if(angle<-25) angle=-25;

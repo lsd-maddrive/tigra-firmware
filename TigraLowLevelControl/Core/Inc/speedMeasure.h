@@ -5,11 +5,14 @@
 
 
 #define ENCODER_STEP_COUNT 720//Encoder resolution
-#define SPEED_DIVIDER 8.3
+#define ALPHA 0.2
+#define ALPHA_FILTER_PERIOD 40
 
 void encoderStart(uint8_t diveder);
 void encoderMeasureDate(void);
 void encoderSetZeroSpeed(void);
 float getSpeed(void);
+void alphaFilter(void);
+float getFilteredSpeed(void);
 
 #endif
