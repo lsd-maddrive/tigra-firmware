@@ -190,7 +190,7 @@ void EXTI1_IRQHandler(void)
   /* USER CODE BEGIN EXTI1_IRQn 1 */
   if((GPIOF->IDR & 0x01) == 0)
   {
-    setBreakStatus(EMERGANSY_BRAKE);
+    //setBreakStatus(EMERGANSY_BRAKE);
   }
   /* USER CODE END EXTI1_IRQn 1 */
 }

@@ -14,8 +14,8 @@ extern UART_HandleTypeDef huart1;
 
 PIDHandle_t SpeedPID=
   {
-    .kp=1,
-    .ki=0.1,
+    .kp=1.5,
+    .ki=0.03,
     .kd=0,
     .prevError=0,
     .integralTerm=0
@@ -50,7 +50,7 @@ void speedControlProcess(void)
             HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
             SpeedPID.integralTerm=0;
             SpeedPID.prevError=0;
-            osDelay(50);
+            osDelay(500);
         }
         if(breakFlag==NO_BREAK)
         {
@@ -63,7 +63,7 @@ void speedControlProcess(void)
                 SpeedPID.integralTerm=0;
                 SpeedPID.prevError=0;
                 reverse=0;
-                osDelay(50);
+                osDelay(500);
             }
             controlImpact=PIDController(&SpeedPID,refSpeed-getSpeed());
             if(controlImpact<0 && refSpeed<0)

@@ -15,6 +15,7 @@ extern "C"
 #define CONNECTION_PORT 80
 #define SERVER_PORT 23456
 
+uint8_t reconnectFlag=0;
 extern UART_HandleTypeDef huart3;
 
     class SocketHardware
@@ -48,6 +49,7 @@ extern UART_HandleTypeDef huart3;
                     if(this->error==ERR_OK)
                     {
                         printDebugMessage((uint8_t*)"Connected\n\r");
+                        reconnectFlag=0;
                         HAL_GPIO_WritePin(ROS_CONNECT_INDICATOR_GPIO_Port,ROS_CONNECT_INDICATOR_Pin,(GPIO_PinState)0);
                     }
                     else   
@@ -79,12 +81,15 @@ extern UART_HandleTypeDef huart3;
             static uint16_t buflen = 0;
             static uint16_t readStep = 0;
             static uint8_t nextBuffFlag=0;
+            char str[100];
             if(readStep==0)
             {
                 if(nextBuffFlag==0)
                 {
                     reciveError = netconn_recv(this->tcpConnection, &inbuf);
-
+                    
+                    // sprintf(str,"error:%d\n\r",reciveError);
+                    // HAL_UART_Transmit(&huart3,(uint8_t *)str,strlen((const char*)str),100);
                 }
                 if(reciveError==ERR_OK || nextBuffFlag==1)  
                 {
@@ -93,6 +98,11 @@ extern UART_HandleTypeDef huart3;
                 } 
                 else
                 { 
+                    if(reciveError==ERR_CONN)
+                    {
+                        reconnectFlag=1;
+                        HAL_GPIO_WritePin(ROS_CONNECT_INDICATOR_GPIO_Port,ROS_CONNECT_INDICATOR_Pin,(GPIO_PinState)1);
+                    }
                     return -1;
                 }
             }

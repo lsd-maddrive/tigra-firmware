@@ -14,19 +14,27 @@
 #include <stdlib.h>
 
 #define RAD_S_TO_RPM 9.55
-#define RAD_TO_DEG 57.3
+#define RAD_TO_DEG 57.3 
 
 osThreadId ROSSpinThreadHandle;
 ros::NodeHandle ros_node;
 uint16_t reciveWachdog=0;
+extern uint8_t reconnectFlag;
 
 void ROSReciveFeedback(const tigra_msgs::TigraState &msg)
 {
     // char str[50];
     // sprintf(str,"ROS Speed:%d Angle:%d\n\r",(int)msg.rotation_speed,(int)msg.angle_steering);
     // printDebugMessage((uint8_t*)str);
+    float speed=getSpeed();
+    float angle=msg.angle_steering*RAD_TO_DEG;
     setReferenceSpeed((float)msg.rotation_speed*RAD_S_TO_RPM);
-    sendReferenceAngle((float)msg.angle_steering*RAD_TO_DEG*-1);
+    if(speed>=5 || speed<=-5)
+    {
+        if(angle>25) angle=25;
+        if(angle<-25) angle=-25;
+        sendReferenceAngle(angle*-1);
+    }
     reciveWachdog=0;
 }
 
@@ -47,7 +55,7 @@ void ROSSpinThreadTask(void const * argument)
         {
             timer=0;
             ///outSpeed.data=(int)getSpeed();
-            outMsg.angle_steering=(float)getAngle()/RAD_TO_DEG;
+            outMsg.angle_steering=(float)(-1*(getAngle()/RAD_TO_DEG));
             outMsg.rotation_speed=getSpeed()/RAD_S_TO_RPM;
             outMsg.stamp.sec=HAL_GetTick()/1000;
             outMsg.stamp.nsec=(HAL_GetTick()%1000)*1000000;
@@ -58,14 +66,17 @@ void ROSSpinThreadTask(void const * argument)
         if(reciveWachdog==100)
         {
             setReferenceSpeed(0);
-            rosInit();
-            printDebugMessage((uint8_t*)"TCP connection close\n\r");
-            HAL_GPIO_WritePin(ROS_CONNECT_INDICATOR_GPIO_Port,ROS_CONNECT_INDICATOR_Pin,(GPIO_PinState)1);
+            //rosInit();
+            //printDebugMessage((uint8_t*)"TCP connection close\n\r");
             reciveWachdog=0;
         }
         else
         {
             reciveWachdog++;
+        }
+        if(reconnectFlag==1)
+        {
+           rosInit(); 
         }
         ros_node.spinOnce();
         osDelay(10);

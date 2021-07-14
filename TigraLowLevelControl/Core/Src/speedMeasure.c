@@ -6,7 +6,7 @@ static uint8_t statusFlag=0;
 static uint16_t encoderPeriod;
 static uint8_t direction;
 extern TIM_HandleTypeDef htim4;
-
+uint16_t countInt=0;
 /**
  * @brief   Starts the process of measuring the speed from the encoder
  * @param   diveder - Sets the part of the period over which the speed is averaged
@@ -14,6 +14,7 @@ extern TIM_HandleTypeDef htim4;
 void encoderStart(uint8_t diveder)
 {
 	TIM4->ARR=(ENCODER_STEP_COUNT/diveder)-1;
+	//TIM4->ARR=0xFFFF;
 	HAL_TIM_Encoder_Start_IT(&htim4, TIM_CHANNEL_ALL);
 }
 
@@ -22,6 +23,7 @@ void encoderStart(uint8_t diveder)
  */
 void encoderMeasureDate(void)
 {
+	countInt++;
 	if(statusFlag==0)
 	{
 		TIM13->CNT=0;		
@@ -60,10 +62,10 @@ float getSpeed(void)
 	if(encoderPeriod!=0)
 	{
 		speed=(float)encoderPeriod/1000000;
-		speed=3.33/speed;
+		speed=0.16/speed;
 		if(direction==1)
 			speed=-1*speed;
-		return speed/SPEED_DIVIDER;
+		return speed;
 	}
 	return 0;
 }
