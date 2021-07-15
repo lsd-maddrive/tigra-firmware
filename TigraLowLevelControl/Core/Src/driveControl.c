@@ -37,13 +37,28 @@ float sign(float a){
 	else return 1;
 }
 
+#define EMERGENCY_CHECK_MAX_COUNT 3
+int emergencyBreakCheckCounter = 0;
+int previousBreakFlag;
+
+void startEmergencyCheck() {
+    previousBreakFlag = breakFlag;
+    breakFlag = EMERGANSY_BRAKE_CHECK;
+    // breakFlag = EMERGANSY_BRAKE;
+    emergencyBreakCheckCounter = 0;
+}
+
+bool isEmergencyPressed() {
+    return (GPIOF->IDR & 0x01) != 0;
+}
+
 /**
  * @brief   Carries out speed regulation.
  */
 void speedControlProcess(void)
 {
     float controlImpact;
-    if(breakFlag!=EMERGANSY_BRAKE)
+    if(breakFlag != EMERGANSY_BRAKE && breakFlag != EMERGANSY_BRAKE_CHECK)
     {
         if(refSpeed==0)
         {
@@ -76,7 +91,7 @@ void speedControlProcess(void)
             }
             controlImpact=PIDController(&SpeedPID,refSpeed-getSpeed());
             if(controlImpact<0 && refSpeed<0)
-                controlImpact*=-1;   
+                controlImpact*=-1;
             if(controlImpact<0)
                 controlImpact=0;
             if(controlImpact!=0)
@@ -88,12 +103,28 @@ void speedControlProcess(void)
             breakControl();
         }   
     }
+    else if (breakFlag == EMERGANSY_BRAKE_CHECK) {
+        HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,1);
+        if (!isEmergencyPressed()) {
+            // Exit check mode - return to previous mode
+            breakFlag = previousBreakFlag;
+            HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,0);
+            return;
+        } else {
+            emergencyBreakCheckCounter++;
+        }
+
+        if (emergencyBreakCheckCounter >= EMERGENCY_CHECK_MAX_COUNT) {
+        // if (isEmergencyPressed())
+            breakFlag = EMERGANSY_BRAKE;
+        }
+    }
     else
     {
         HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0); 
         HAL_GPIO_WritePin(EMERGANSY_BREAK_INDICATOR_GPIO_Port,EMERGANSY_BREAK_INDICATOR_Pin,0);
         HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,1);
-    }   
+    }
 }
 
 /**
@@ -215,14 +246,7 @@ void setReferenceSpeed(float speed)
                 osDelay(1000);
                 if(getSpeed()==0)
                     reverse=1;
-                else
-                {
-                    breakFlag=BREAK;
-                    HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0);
-                    SpeedPID.integralTerm=0;
-                    breakRefCurrent=BREAK_REF_CURRENT; 
-                    refSpeed=0; 
-                }
+
             }
         }
     }
@@ -241,6 +265,9 @@ void setReferenceSpeed(float speed)
  */
 void setBreakStatus(brakeStatus_t status)
 {
+    if (breakFlag == EMERGANSY_BRAKE_CHECK)
+        return
+
     breakFlag=status;
 }
 

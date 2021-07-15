@@ -21,6 +21,26 @@ ros::NodeHandle ros_node;
 uint16_t reciveWachdog=0;
 extern uint8_t reconnectFlag;
 
+class AlphaFilter {
+public:
+    AlphaFilter(float alpha) {
+        m_alpha = alpha;
+        m_memory = 0;
+    }
+
+    float getFiltered(float value) {
+        float new_value = m_memory * (1-m_alpha) + value * m_alpha;
+        m_memory = new_value;
+        return new_value;
+    }
+
+private:
+    float m_alpha;
+    float m_memory;
+};
+
+AlphaFilter steer_filter(0.4);
+
 void ROSReciveFeedback(const tigra_msgs::TigraState &msg)
 {
     // char str[50];
@@ -34,7 +54,15 @@ void ROSReciveFeedback(const tigra_msgs::TigraState &msg)
     {
         if(angle>25) angle=25;
         if(angle<-25) angle=-25;
-        sendReferenceAngle(angle*-1);
+
+        float filtered = steer_filter.getFiltered(angle);
+
+        // To avoid rotation disable
+        if (((int)filtered) == 0) {
+            filtered = -1;
+        }
+
+        sendReferenceAngle(filtered*-1);
     }
     reciveWachdog=0;
 }
@@ -67,6 +95,7 @@ void ROSSpinThreadTask(void const * argument)
         if(reciveWachdog==100)
         {
             setReferenceSpeed(0);
+            sendReferenceAngle(0); // Turn off rotation
             //rosInit();
             //printDebugMessage((uint8_t*)"TCP connection close\n\r");
             reciveWachdog=0;

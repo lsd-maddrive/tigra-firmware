@@ -623,11 +623,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BREAK_LOW_Pin EMERGANSY_BREAK_Pin */
-  GPIO_InitStruct.Pin = BREAK_LOW_Pin|EMERGANSY_BREAK_Pin;
+  /*Configure GPIO pin : BREAK_LOW_Pin */
+  GPIO_InitStruct.Pin = BREAK_LOW_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+  HAL_GPIO_Init(BREAK_LOW_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : EMERGANSY_BREAK_Pin */
+  GPIO_InitStruct.Pin = EMERGANSY_BREAK_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(EMERGANSY_BREAK_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : BREAK_RESET_Pin */
   GPIO_InitStruct.Pin = BREAK_RESET_Pin;

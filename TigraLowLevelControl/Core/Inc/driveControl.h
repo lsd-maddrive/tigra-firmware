@@ -5,6 +5,7 @@
 #include "main.h"
 #include "speedMeasure.h"
 #include "math.h"
+#include <stdbool.h>
 
 #define SPEED_MAX_VALUE 500
 #define BREAK_REF_CURRENT 1
@@ -34,7 +35,8 @@ typedef enum
     NO_BREAK,//No break state
     BREAK,//Break state
     BREAK_DROP,//Return the break
-    EMERGANSY_BRAKE
+    EMERGANSY_BRAKE,
+    EMERGANSY_BRAKE_CHECK
 }brakeStatus_t;
 
 
@@ -45,6 +47,8 @@ void breakControl(void);
 void currentControl(float refCurrent);
 void breakRealise(void);
 void setBreakStatus(brakeStatus_t status);
+bool isEmergencyPressed(); // Really not pressed but button released
+void startEmergencyCheck();
 brakeStatus_t getBreakStatus(void);
 float getBrakeCurrent(void);
 void reciveAngle(uint8_t byte);

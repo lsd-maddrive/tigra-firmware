@@ -184,13 +184,13 @@ void EXTI0_IRQHandler(void)
 void EXTI1_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI1_IRQn 0 */
-  emergensyBrakeFlag=1;
+  //emergensyBrakeFlag=1;
   /* USER CODE END EXTI1_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
   /* USER CODE BEGIN EXTI1_IRQn 1 */
-  if((GPIOF->IDR & 0x01) == 0)
+  if(isEmergencyPressed())
   {
-    //setBreakStatus(EMERGANSY_BRAKE);
+    startEmergencyCheck();
   }
   /* USER CODE END EXTI1_IRQn 1 */
 }
@@ -204,7 +204,6 @@ void EXTI2_IRQHandler(void)
   static uint8_t state=0;
   /* USER CODE END EXTI2_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
-  // emergensyBrakeFlag=1;
   /* USER CODE BEGIN EXTI2_IRQn 1 */
   /*if((GPIOF->IDR & 0x02) != 0!=RESET)
   {
