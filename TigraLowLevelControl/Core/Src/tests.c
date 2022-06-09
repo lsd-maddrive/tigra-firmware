@@ -177,28 +177,27 @@ void breakTest()
     if(symb=='B')
     {
         HAL_UART_Transmit(&huart3,"Break\n\r",7,100);
-        setBreakStatus(BREAK);
+        brakeSetState(BRAKE_FORWARD,BRAKE_POWER);
     }
     if(symb=='R')
     {
         if(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_0)==1)
         {
             HAL_UART_Transmit(&huart3,"Break realise\n\r",15,100);
-            setBreakStatus(BREAK_DROP);
+            brakeSetState(BRAKE_REALISE,BRAKE_POWER);
         }
     }
     if(symb=='S')
     {
         HAL_UART_Transmit(&huart3,"Break stop\n\r",12,100);
-        TIM9->CCR1=0;
-        setBreakStatus(NO_BREAK);
+        brakeSetState(BRAKE_STOP,0);
     } 
-    else
-        counter++;
-    if(getBreakStatus()==BREAK)
-        currentControl(BREAK_REF_CURRENT);
-    else if (getBreakStatus()==BREAK_DROP)
-        currentControl(-1*BREAK_REF_CURRENT);
+    // else
+    //     counter++;
+    // if(getBreakStatus()==BREAK)
+    //     currentControl(BREAK_REF_CURRENT);
+    // else if (getBreakStatus()==BREAK_DROP)
+    //     currentControl(-1*BREAK_REF_CURRENT);
 }
 
 void rudderCommunicationTest(void)

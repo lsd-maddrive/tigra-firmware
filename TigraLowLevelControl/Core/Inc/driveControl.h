@@ -45,7 +45,6 @@ float PIDController(PIDHandle_t * PID,float error);
 void setReferenceSpeed(float speed);
 void breakControl(void);
 void currentControl(float refCurrent);
-void breakRealise(void);
 void setBreakStatus(brakeStatus_t status);
 bool isEmergencyPressed(); // Really not pressed but button released
 void startEmergencyCheck();

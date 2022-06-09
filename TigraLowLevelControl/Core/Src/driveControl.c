@@ -100,7 +100,7 @@ void speedControlProcess(void)
         }
         else
         {
-            breakControl();
+            //breakControl();
         }   
     }
     else if (breakFlag == EMERGANSY_BRAKE_CHECK) {
@@ -184,19 +184,6 @@ void currentControl(float refCurrent)
     }
 }
 
-/**
- * @brief   release the brakes when the limit switch is triggered.
- */
-void breakRealise(void)
-{
-    if(breakFlag==BREAK_DROP)
-    {
-        TIM9->CCR1=0;
-        HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,0);
-        HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,0);
-        breakFlag=NO_BREAK;
-    }
-}
 
 /**
  * @brief   PID controller function.
