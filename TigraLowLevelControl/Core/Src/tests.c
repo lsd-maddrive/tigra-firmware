@@ -63,7 +63,7 @@ void testProcess(void)
     else
         counter2++;
 #endif
-    osDelay(10);
+    osDelay(20);
 }
 
 /**
@@ -193,12 +193,6 @@ void breakTest()
         HAL_UART_Transmit(&huart3,"Break stop\n\r",12,100);
         brakeSetState(BRAKE_STOP,0);
     } 
-    // else
-    //     counter++;
-    // if(getBreakStatus()==BREAK)
-    //     currentControl(BREAK_REF_CURRENT);
-    // else if (getBreakStatus()==BREAK_DROP)
-    //     currentControl(-1*BREAK_REF_CURRENT);
 }
 
 void rudderCommunicationTest(void)

@@ -759,10 +759,6 @@ void driveControlTask(void const * argument)
   // HAL_GPIO_WritePin(TURN_SIGNAL_RIGHT_GPIO_Port,TURN_SIGNAL_RIGHT_Pin,0);
   TIM9->CCR1=0;
   HAL_TIM_PWM_Start(&htim9, TIM_CHANNEL_1);
-  if(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_0)==1)
-  {
-    setBreakStatus(BREAK_DROP);
-  }
   /* Infinite loop */
   for(;;)
   {

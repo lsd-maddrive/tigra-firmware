@@ -15,10 +15,13 @@ void brakeSetState(Brake_state_t direction,uint16_t power)
     else if(direction==BRAKE_REALISE)
     {
         brakeState=BRAKE_REALISE;
-        TIM9->CCR1=power;
-        TIM9->CR1|=TIM_CR1_CEN;
-        HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,1);
-        HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,0);
+        // if(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_0)!=0)
+        // {
+            TIM9->CCR1=power;
+            TIM9->CR1|=TIM_CR1_CEN;
+            HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,1);
+            HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,0);
+        // }
     }
     else if(direction==BRAKE_STOP)
     {

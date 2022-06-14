@@ -1,5 +1,7 @@
 #include "driveControl.h"
 
+Drive_state_t driveState = STOP;
+
 static brakeStatus_t breakFlag=NO_BREAK;
 static float refSpeed=0;
 static int8_t currentAngle;
@@ -12,24 +14,17 @@ extern DAC_HandleTypeDef hdac;
 extern ADC_HandleTypeDef hadc1;
 extern TIM_HandleTypeDef htim9;
 extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart3;
 
 PIDHandle_t SpeedPID=
   {
-    .kp=1.5,
-    .ki=0.03,
+    .kp=1.5,//1.5
+    .ki=0.03,//0.03
     .kd=0,
     .prevError=0,
     .integralTerm=0
   };
 
-  PIDHandle_t breakCurrentPID=
-  {
-    .kp=10000,
-    .ki=7000,
-    .kd=800,
-    .prevError=0,
-    .integralTerm=0
-  };
 
 float sign(float a){
 	if (a>0) return 1;
@@ -56,132 +51,90 @@ bool isEmergencyPressed() {
 void speedControlProcess(void)
 {
     float controlImpact;
-    if(breakFlag != EMERGANSY_BRAKE && breakFlag != EMERGANSY_BRAKE_CHECK)
+    float currentSpeed = getSpeed();
+    switch(driveState)
     {
-        if(refSpeed==0)
-        {
-            osDelay(100);
-            HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0); 
-            HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
-            SpeedPID.integralTerm=0;
-            SpeedPID.prevError=0;
-            osDelay(100);
-        }
-        if(breakFlag==NO_BREAK)
-        {
-            if(reverse==1)
+        case STOP:
+            brakeSetState(BRAKE_FORWARD,BRAKE_POWER);
+            setMotorDirection(MOTOR_DIRECTION_FORWARD);
+            setMotorPower(0);
+            if(currentSpeed>=0 && refSpeed>0)
             {
-                //osDelay(750);
-                if(refSpeed>=0)
-                {
-                    HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
-                    reverseState=0;
-                }
-                else
-                {
-                    reverseState=1;
-                    HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
-                }
-                SpeedPID.integralTerm=0;
-                SpeedPID.prevError=0;
-                osDelay(500);
-                reverse=0;
+                osDelay(100);
+                driveChangeState(RUN);
             }
-            controlImpact=PIDController(&SpeedPID,refSpeed-getSpeed());
-            if(controlImpact<0 && refSpeed<0)
+            else if(currentSpeed<=0 && refSpeed<0)
+            {
+                osDelay(100);
+                driveChangeState(REVERS);
+            }
+            break;
+        case RUN:
+            if(refSpeed<=0)
+            {
+                driveChangeState(STOP);
+            }
+            setMotorDirection(MOTOR_DIRECTION_FORWARD);
+            brakeSetState(BRAKE_REALISE,BRAKE_POWER);
+            controlImpact=PIDController(&SpeedPID,refSpeed-currentSpeed);
+            if(controlImpact<0)
+                controlImpact=0;
+            else
+                controlImpact+=MOTOR_CONSTANT_OFFSET;
+            setMotorPower((uint16_t)controlImpact);
+            break;
+        case REVERS:
+            if(refSpeed>=0)
+            {
+                driveChangeState(STOP);
+            }
+            setMotorDirection(MOTOR_DIRECTION_BACKWARD);
+            brakeSetState(BRAKE_REALISE,BRAKE_POWER);
+            controlImpact=PIDController(&SpeedPID,refSpeed-currentSpeed);
+            if(controlImpact<0)
                 controlImpact*=-1;
             if(controlImpact<0)
                 controlImpact=0;
-            if(controlImpact!=0)
-                controlImpact+=1500;
-            HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)controlImpact);  
-        }
-        else
-        {
-            //breakControl();
-        }   
+            else
+                controlImpact+=MOTOR_CONSTANT_OFFSET;
+            setMotorPower((uint16_t)controlImpact);
+            break;
+        case FAIL:
+            break;
     }
-    else if (breakFlag == EMERGANSY_BRAKE_CHECK) {
-        HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,1);
-        if (!isEmergencyPressed()) {
-            // Exit check mode - return to previous mode
-            breakFlag = previousBreakFlag;
-            HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,0);
-            return;
-        } else {
-            emergencyBreakCheckCounter++;
-        }
+}
 
-        if (emergencyBreakCheckCounter >= EMERGENCY_CHECK_MAX_COUNT) {
-        // if (isEmergencyPressed())
-            breakFlag = EMERGANSY_BRAKE;
-        }
+void driveChangeState(Drive_state_t state)
+{
+    uint8_t string[100];
+    if(driveState==STOP && state==RUN)
+    {
+        driveState=RUN;
+        sprintf(string,"STOP->RUN\n\r");      
+    }
+    else if(driveState==RUN && state==STOP)
+    {
+        PIDClear(&SpeedPID);
+        driveState=STOP;
+        sprintf(string,"RUN->STOP\n\r");  
+    }
+    else if(driveState==STOP && state==REVERS)
+    {
+        driveState=REVERS;
+        sprintf(string,"STOP->REVERS\n\r");  
+    }
+    else if(driveState==REVERS && state==STOP)
+    {
+        PIDClear(&SpeedPID);
+        driveState=STOP;
+        sprintf(string,"REVERS->STOP\n\r");  
     }
     else
     {
-        HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0); 
-        HAL_GPIO_WritePin(EMERGANSY_BREAK_INDICATOR_GPIO_Port,EMERGANSY_BREAK_INDICATOR_Pin,0);
-        HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,1);
+        sprintf(string,"FAIL CHANGE\n\r");  
     }
+    HAL_UART_Transmit(&huart3,&string,strlen(string),100);
 }
-
-/**
- * @brief   Break control system.
- */
-void breakControl(void)
-{
-    if(breakFlag==BREAK || breakFlag==BREAK_DROP)
-    {
-        if(breakFlag==BREAK)
-            currentControl(breakRefCurrent);
-        else if(breakFlag==BREAK_DROP)
-            currentControl(-1*breakRefCurrent);
-        if((getSpeed()==0) && breakFlag==BREAK)
-        {
-            if(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_0)==0)
-            {
-                breakFlag=NO_BREAK;  
-                TIM9->CCR1=0;
-                breakCurrentPID.integralTerm=0;
-                breakCurrentPID.prevError=0;
-                HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,0);
-                HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,0);
-            }
-            else 
-            {
-                breakFlag=BREAK_DROP;
-                breakCurrentPID.integralTerm=0;
-                breakCurrentPID.prevError=0;
-            }
-        }
-    }
-}
-
-/**
- * @brief   Current loop control system.
- * @param   refCurrent - referenceCurrentrefCurrent.
- */
-void currentControl(float refCurrent)
-{
-    float controllBrakeDrive;
-    float current;
-    current=getBrakeCurrent();
-    controllBrakeDrive=PIDController(&breakCurrentPID,(float)(refCurrent-(float)current));
-    if(controllBrakeDrive>=0)
-    {
-        HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,0);
-        HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,1);
-        TIM9->CCR1=(uint16_t)controllBrakeDrive;
-    }
-    else if(controllBrakeDrive<0)
-    {
-        controllBrakeDrive=-1*controllBrakeDrive;
-        HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,1);
-        HAL_GPIO_WritePin(BREAK_DIRECTION_R_GPIO_Port,BREAK_DIRECTION_R_Pin,0);
-        TIM9->CCR1=(uint16_t)controllBrakeDrive;
-    }
-}
-
 
 /**
  * @brief   PID controller function.
@@ -198,92 +151,39 @@ float PIDController(PIDHandle_t * PID,float error)
     return controllerOut;
 }
 
+void PIDClear(PIDHandle_t * PID)
+{
+    PID->integralTerm=0;
+    PID->prevError=0;
+}
+
 /**
  * @brief   Reference speed set function.
  * @param   speed - reference speed.
  */
 void setReferenceSpeed(float speed)
 {
-    if(breakFlag==NO_BREAK && refSpeed!=speed)
-    {
-        if(getSpeed()!=0)
-        {
-            if(sign(speed)!=sign(getSpeed()) || speed==0)
-            {
-                breakFlag=BREAK;
-                HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0);
-                SpeedPID.integralTerm=0;
-                breakRefCurrent=BREAK_REF_CURRENT;
-                if(sign(speed)!=sign(refSpeed))
-                    reverse=1;
-                refSpeed=speed;
-            }
-            else if(sign(speed)==sign(getSpeed()) && sign(speed)==sign(refSpeed))
-            {
-                refSpeed=speed;
-            }
-        }
-        else
-        {
-            refSpeed=speed;
-            if((refSpeed<0 && reverseState==0) || (refSpeed>=0 && reverseState==1))
-            {
-                osDelay(1000);
-                if(getSpeed()==0)
-                    reverse=1;
-
-            }
-        }
-    }
-    else if ((breakFlag==BREAK || breakFlag==BREAK_DROP) && refSpeed!=speed)
-    {
-        if(sign(speed)!=sign(refSpeed))
-            reverse=1;
-        refSpeed=speed;
-    }
-    
+    refSpeed=speed;
 }
 
-/**
- * @brief   Break status set function.
- * @param   status - set break status.
- */
-void setBreakStatus(brakeStatus_t status)
+inline void setMotorPower(uint16_t power)
 {
-    if (breakFlag == EMERGANSY_BRAKE_CHECK)
-        return
-
-    breakFlag=status;
+    HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,power); 
 }
 
-/**
- * @brief   Break status get function.
- */
-brakeStatus_t getBreakStatus(void)
+void setMotorDirection(Motor_direction_t direction)
 {
-    return breakFlag;
-}
-
-/**
- * @brief   Return the measurment current in Amp.
- */
-float getBrakeCurrent(void)
-{
-    uint16_t current;
-    uint8_t i;
-    float currentAmp=0;   
-    for(i=0;i<CURRENT_MEASURMENT_COUNT;i++)
+    if(direction==MOTOR_DIRECTION_FORWARD)
     {
-        HAL_ADC_Start(&hadc1);
-        HAL_ADC_PollForConversion(&hadc1,100);
-        current=HAL_ADC_GetValue(&hadc1);
-        currentAmp+=(float)((float)(current-CURRENS_SENSOR_OFFSET)*0.00081)/CURRENT_SENSOR_SENSITIVITY;
+        HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
     }
-    currentAmp/=CURRENT_MEASURMENT_COUNT;
-    if(currentAmp<0.1 && currentAmp>-0.1)
-        currentAmp=0;
-    return -1*currentAmp;
+    else if(direction==MOTOR_DIRECTION_BACKWARD)
+    {
+        HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
+    }
 }
+
+//TODO Перенести в отдельный файл
 
 /**
  * @brief   Recive wheels angle from UART1.
