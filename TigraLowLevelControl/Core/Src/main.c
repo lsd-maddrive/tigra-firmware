@@ -21,6 +21,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -129,6 +130,8 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM9_Init();
   /* USER CODE BEGIN 2 */
+
+
   HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0);
   HAL_DAC_Start(&hdac,DAC_CHANNEL_1);
   encoderStart(18);
@@ -192,7 +195,10 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+    // ledsSet(LEDS_ROS,LEDS_ON);
+    // HAL_Delay(1000);
+    // ledsSet(LEDS_ROS,LEDS_OFF);
+    // HAL_Delay(1000);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -631,8 +637,8 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : EMERGANSY_BREAK_Pin */
   GPIO_InitStruct.Pin = EMERGANSY_BREAK_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(EMERGANSY_BREAK_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : BREAK_RESET_Pin */
@@ -745,7 +751,7 @@ void driveControlTask(void const * argument)
   /* USER CODE BEGIN driveControlTask */
   uint8_t str;
   float refSpeed=0;
-  HAL_GPIO_WritePin(ENABLE_INDICATOR_GPIO_Port,ENABLE_INDICATOR_Pin,0);
+  ledsSet(LEDS_ENABLE,LEDS_ON);
   // HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
   // HAL_GPIO_WritePin(ROS_CONNECT_INDICATOR_GPIO_Port,ROS_CONNECT_INDICATOR_Pin,0);
   // HAL_GPIO_WritePin(EMERGANSY_BREAK_INDICATOR_GPIO_Port,EMERGANSY_BREAK_INDICATOR_Pin,0);

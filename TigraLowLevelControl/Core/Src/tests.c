@@ -75,13 +75,14 @@ void encoderTest(void)
 {
     uint8_t string[100];
     float speed=getSpeed();
-    /*if(speed<0)
+    if(speed<0)
     {
         speed*=-1;
         sprintf(string,"Speed:-%d.%03d\n\r",(uint32_t)speed, (uint16_t)((speed - (uint32_t)speed)*1000.) );
     }
     else
-        sprintf(string,"Speed:%d.%03d\n\r",(uint32_t)speed, (uint16_t)((speed - (uint32_t)speed)*1000.) );*/
+        sprintf(string,"Speed:%d.%03d\n\r",(uint32_t)speed, (uint16_t)((speed - (uint32_t)speed)*1000.) );
+    HAL_UART_Transmit(&huart3,&string,strlen(string),100);
     sprintf(string,"count:%d\n\r",countInt);
     HAL_UART_Transmit(&huart3,&string,strlen(string),100);
 }

@@ -43,6 +43,7 @@ extern "C" {
 #include "lwip/api.h"
 #include "lwip/apps/fs.h"
 #include "ethernetConf.h"
+#include "leds.h"
 
 #include "driveControl.h"
 #include "speedMeasure.h"

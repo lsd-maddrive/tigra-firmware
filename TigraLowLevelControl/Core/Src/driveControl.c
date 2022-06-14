@@ -41,15 +41,13 @@ float sign(float a){
 int emergencyBreakCheckCounter = 0;
 int previousBreakFlag;
 
-void startEmergencyCheck() {
-    previousBreakFlag = breakFlag;
-    breakFlag = EMERGANSY_BRAKE_CHECK;
-    // breakFlag = EMERGANSY_BRAKE;
-    emergencyBreakCheckCounter = 0;
+void startEmergencyCheck() 
+{
+    ledsSet(LEDS_EMERGENSY,LEDS_ON);
 }
 
 bool isEmergencyPressed() {
-    return (GPIOF->IDR & 0x01) != 0;
+    return (GPIOF->IDR & 0x01) != 1;
 }
 
 /**
