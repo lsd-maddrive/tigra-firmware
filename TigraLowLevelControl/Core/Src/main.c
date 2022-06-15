@@ -131,7 +131,7 @@ int main(void)
   MX_TIM9_Init();
   /* USER CODE BEGIN 2 */
 
-
+  
   HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,0);
   HAL_DAC_Start(&hdac,DAC_CHANNEL_1);
   encoderStart(18);
@@ -765,7 +765,7 @@ void driveControlTask(void const * argument)
   #if ((!DRIVE_TEST || TEST_SPEED_CONRTOL_SYSTEM) && !BREAK_TEST && !RUDDER_COMMUNICATION_TEST)
     speedControlProcess();
   #endif 
-    osDelay(20);
+    osDelay(5);
   }
   /* USER CODE END driveControlTask */
 }

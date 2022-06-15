@@ -18,8 +18,8 @@ extern UART_HandleTypeDef huart3;
 
 PIDHandle_t SpeedPID=
   {
-    .kp=1.5,//1.5
-    .ki=0.03,//0.03
+    .kp=30,//1.5
+    .ki=0.15,//0.03
     .kd=0,
     .prevError=0,
     .integralTerm=0
@@ -60,12 +60,12 @@ void speedControlProcess(void)
             setMotorPower(0);
             if(currentSpeed>=0 && refSpeed>0)
             {
-                osDelay(100);
+                osDelay(50);
                 driveChangeState(RUN);
             }
             else if(currentSpeed<=0 && refSpeed<0)
             {
-                osDelay(100);
+                osDelay(500);
                 driveChangeState(REVERS);
             }
             break;
@@ -76,7 +76,7 @@ void speedControlProcess(void)
             }
             setMotorDirection(MOTOR_DIRECTION_FORWARD);
             brakeSetState(BRAKE_REALISE,BRAKE_POWER);
-            controlImpact=PIDController(&SpeedPID,refSpeed-currentSpeed);
+            controlImpact=PIDController(&SpeedPID,refSpeed-getFilteredSpeed());
             if(controlImpact<0)
                 controlImpact=0;
             else
@@ -91,12 +91,11 @@ void speedControlProcess(void)
             setMotorDirection(MOTOR_DIRECTION_BACKWARD);
             brakeSetState(BRAKE_REALISE,BRAKE_POWER);
             controlImpact=PIDController(&SpeedPID,refSpeed-currentSpeed);
+            if(controlImpact>0)
+                controlImpact=0;
             if(controlImpact<0)
                 controlImpact*=-1;
-            if(controlImpact<0)
-                controlImpact=0;
-            else
-                controlImpact+=MOTOR_CONSTANT_OFFSET;
+            controlImpact+=MOTOR_CONSTANT_OFFSET;
             setMotorPower((uint16_t)controlImpact);
             break;
         case FAIL:
@@ -131,7 +130,7 @@ void driveChangeState(Drive_state_t state)
     }
     else
     {
-        sprintf(string,"FAIL CHANGE\n\r");  
+        // sprintf(string,"FAIL CHANGE\n\r");  
     }
     HAL_UART_Transmit(&huart3,&string,strlen(string),100);
 }
@@ -168,6 +167,10 @@ void setReferenceSpeed(float speed)
 
 inline void setMotorPower(uint16_t power)
 {
+    uint8_t string[30];
+    // float speed = getSpeed();
+    // sprintf(string,"DAC:%d, Speed:%d\n\r",power,(uint16_t)speed);  
+    // HAL_UART_Transmit(&huart3,&string,strlen(string),100);
     HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,power); 
 }
 
