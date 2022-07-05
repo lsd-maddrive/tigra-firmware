@@ -193,8 +193,9 @@ void setMotorDirection(Motor_direction_t direction)
  */
 void reciveAngle(uint8_t byte)
 {
-    static uint8_t state=0;
-    if(byte==0x1 && state==0)
+    currentAngle=(int8_t)byte;
+    //static uint8_t state=0;
+    /*if(byte==0x1 && state==0)
     {
         state++;
     }
@@ -202,7 +203,7 @@ void reciveAngle(uint8_t byte)
     {
         currentAngle=(int8_t)byte;
         state=0;
-    }
+    }*/
 }
 
 /**

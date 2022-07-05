@@ -43,27 +43,28 @@ AlphaFilter steer_filter(0.4);
 
 void ROSReciveFeedback(const tigra_msgs::TigraState &msg)
 {
-    // char str[50];
-    // sprintf(str,"ROS Speed:%d Angle:%d\n\r",(int)msg.rotation_speed,(int)msg.angle_steering);
-    // printDebugMessage((uint8_t*)str);
+    char str[50];
+
     //float speed=getSpeed();
     float speed=getFilteredSpeed();
-    float angle=msg.angle_steering*RAD_TO_DEG;
+    float angle=msg.angle_steering*RAD_TO_DEG; 
     setReferenceSpeed((float)msg.rotation_speed*RAD_S_TO_RPM);
-    if(speed>=10 || speed<=-10)
-    {
-        if(angle>25) angle=25;
-        if(angle<-25) angle=-25;
+    //if(speed>=10 || speed<=-10)
+    //{
+    if(angle>25) angle=25;
+    if(angle<-25) angle=-25;
 
-        float filtered = steer_filter.getFiltered(angle);
+    float filtered = steer_filter.getFiltered(angle);
 
-        // To avoid rotation disable
-        if (((int)filtered) == 0) {
-            filtered = -1;
-        }
+    // To avoid rotation disable
+    /*if (((int)filtered) == 0) {
+        filtered = -1;
+    }*/
 
-        sendReferenceAngle(filtered*-1);
-    }
+    sendReferenceAngle(filtered);
+    sprintf(str,"ROS Speed:%d Angle:%d\n\r",(int)msg.rotation_speed,(int)filtered);     
+    printDebugMessage((uint8_t*)str);
+    //}
     reciveWachdog=0;
 }
 
@@ -94,8 +95,8 @@ void ROSSpinThreadTask(void const * argument)
             timer++;
         if(reciveWachdog==100)
         {
-            setReferenceSpeed(0);
-            sendReferenceAngle(0); // Turn off rotation
+            //setReferenceSpeed(0);
+            //sendReferenceAngle(0); // Turn off rotation
             //rosInit();
             //printDebugMessage((uint8_t*)"TCP connection close\n\r");
             reciveWachdog=0;
