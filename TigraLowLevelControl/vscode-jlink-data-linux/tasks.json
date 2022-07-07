@@ -1,0 +1,96 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Make Build",
+			"type": "shell",
+			"command": "make -s -j `nproc --all` all",
+			"options": {
+				"cwd": "${workspaceRoot}",
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Make Clean",
+			"type": "shell",
+			"command": "make -s clean",
+			"options": {
+				"cwd": "${workspaceRoot}",
+			},
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Write to Flash MCU",
+			"type": "shell",
+			"command": "JLinkExe -Device STM32F767ZI -If SWD -Speed 1000 JLink/FlashMCU.jlink",
+			"options": {
+				"cwd": "${workspaceRoot}",
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Read Flash from MCU",
+			"type": "shell",
+			"command": "JLinkExe -Device STM32F767ZI -If SWD -Speed 1000 JLink\\ReadMCU.jlink",
+			"options": {
+				"cwd": "${workspaceRoot}",
+			},
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Erase Flash MCU",
+			"type": "shell",
+			"command": "JLinkExe -Device STM32F767ZI -If SWD -Speed 1000 JLink\\EraseMCU.jlink",
+			"options": {
+				"cwd": "${workspaceRoot}",
+			},
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Reset MCU",
+			"type": "shell",
+			"command": "JLinkExe -Device STM32F767ZI -If SWD -Speed 1000 JLink\\ResetMCU.jlink",
+			"options": {
+				"cwd": "${workspaceRoot}",
+			},
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Start GDB Server (Cortex-M7)",
+			"type": "shell",
+			"command": "JLinkGDBServerExe -select USB -device Cortex-M7 -if SWD -speed 1000 -ir",
+			"options": {
+				"cwd": "${workspaceRoot}",
+			},
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		}
+	]
+}
