@@ -785,20 +785,20 @@ void lightControlTask(void const * argument)
   for(;;)
   {
     angle=getAngle();
-    if(angle<2 && angle>-2)
+    if(angle<5 && angle>-5)
     {
       HAL_GPIO_WritePin(TURN_SIGNAL_LEFT_GPIO_Port,TURN_SIGNAL_LEFT_Pin,1);
       HAL_GPIO_WritePin(TURN_SIGNAL_RIGHT_GPIO_Port,TURN_SIGNAL_RIGHT_Pin,1);
     }
-    else if(angle>2)
-    {
-      HAL_GPIO_TogglePin(TURN_SIGNAL_RIGHT_GPIO_Port,TURN_SIGNAL_RIGHT_Pin);
-      HAL_GPIO_WritePin(TURN_SIGNAL_LEFT_GPIO_Port,TURN_SIGNAL_LEFT_Pin,1);
-    }
-    else if(angle<-2)
+    else if(angle>5)
     {
       HAL_GPIO_TogglePin(TURN_SIGNAL_LEFT_GPIO_Port,TURN_SIGNAL_LEFT_Pin);
       HAL_GPIO_WritePin(TURN_SIGNAL_RIGHT_GPIO_Port,TURN_SIGNAL_RIGHT_Pin,1);
+    }
+    else if(angle<-5)
+    {
+      HAL_GPIO_TogglePin(TURN_SIGNAL_RIGHT_GPIO_Port,TURN_SIGNAL_RIGHT_Pin);
+      HAL_GPIO_WritePin(TURN_SIGNAL_LEFT_GPIO_Port,TURN_SIGNAL_LEFT_Pin,1);
     }
     osDelay(500);
   }
