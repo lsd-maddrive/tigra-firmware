@@ -174,7 +174,7 @@ void EXTI0_IRQHandler(void)
   /* USER CODE END EXTI0_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
   /* USER CODE BEGIN EXTI0_IRQn 1 */
-  breakRealise();
+  brakeRealise();
   /* USER CODE END EXTI0_IRQn 1 */
 }
 
@@ -186,12 +186,22 @@ void EXTI1_IRQHandler(void)
   /* USER CODE BEGIN EXTI1_IRQn 0 */
   //emergensyBrakeFlag=1;
   /* USER CODE END EXTI1_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
-  /* USER CODE BEGIN EXTI1_IRQn 1 */
-  if(isEmergencyPressed())
-  {
-    startEmergencyCheck();
-  }
+  EXTI->PR |= EXTI_PR_PR1;
+  //while(1);
+  // HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
+  // /* USER CODE BEGIN EXTI1_IRQn 1 */
+  // ledsToggle(LEDS_EMERGENSY);
+  // if(isEmergencyPressed())
+  // {
+  //   //ledsSet(LEDS_EMERGENSY,LEDS_ON);
+  //   //startEmergencyCheck();
+  // }
+  // else 
+  // {
+  //   //ledsSet(LEDS_EMERGENSY,LEDS_OFF);
+  //   //ledsSet(LEDS_EMERGENSY,LEDS_OFF);
+  // }
+  
   /* USER CODE END EXTI1_IRQn 1 */
 }
 
@@ -203,7 +213,9 @@ void EXTI2_IRQHandler(void)
   /* USER CODE BEGIN EXTI2_IRQn 0 */
   static uint8_t state=0;
   /* USER CODE END EXTI2_IRQn 0 */
+  EXTI->PR |= EXTI_PR_PR2;
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
+  //ledsSet(LEDS_EMERGENSY,LEDS_OFF);
   /* USER CODE BEGIN EXTI2_IRQn 1 */
   /*if((GPIOF->IDR & 0x02) != 0!=RESET)
   {

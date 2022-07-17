@@ -5,10 +5,12 @@
 #include "main.h"
 #include "speedMeasure.h"
 #include "math.h"
+#include "brakeControl.h"
 #include <stdbool.h>
 
 #define SPEED_MAX_VALUE 500
 #define BREAK_REF_CURRENT 1
+#define MOTOR_CONSTANT_OFFSET 0
 
 #define CURRENT_SENSOR_SENSITIVITY 0.21
 #define CURRENS_SENSOR_OFFSET 2048
@@ -20,6 +22,14 @@ typedef struct
     int16_t angle;//Reference angle
 }
 driveData_t;
+
+typedef enum
+{
+    STOP,
+    RUN,
+    REVERS,
+    FAIL
+}Drive_state_t;
 
 typedef struct
 {
@@ -39,18 +49,20 @@ typedef enum
     EMERGANSY_BRAKE_CHECK
 }brakeStatus_t;
 
+typedef enum
+{
+    MOTOR_DIRECTION_FORWARD,
+    MOTOR_DIRECTION_BACKWARD
+}Motor_direction_t;
 
 void speedControlProcess(void);
 float PIDController(PIDHandle_t * PID,float error);
+void PIDClear(PIDHandle_t * PID);
 void setReferenceSpeed(float speed);
-void breakControl(void);
-void currentControl(float refCurrent);
-void breakRealise(void);
-void setBreakStatus(brakeStatus_t status);
+inline void setMotorPower(uint16_t power);
+void setMotorDirection(Motor_direction_t direction);
 bool isEmergencyPressed(); // Really not pressed but button released
 void startEmergencyCheck();
-brakeStatus_t getBreakStatus(void);
-float getBrakeCurrent(void);
 void reciveAngle(uint8_t byte);
 int8_t getAngle(void);
 void sendReferenceAngle(float refAngle);

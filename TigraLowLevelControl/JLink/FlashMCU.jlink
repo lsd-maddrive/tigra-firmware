@@ -1,7 +1,7 @@
 r
 h
-loadbin build\TigraLowLevelControl.hex 0x00
+loadbin build/TigraLowLevelControl.hex 0x00
 g
-verifybin build\TigraLowLevelControl.hex, 0x00
+verifybin build/TigraLowLevelControl.hex, 0x00
 r
 q

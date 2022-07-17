@@ -11,6 +11,7 @@
 #include "stm32f7xx_hal.h"
 #include "speedMeasure.h"
 #include "driveControl.h"
+#include "brakeControl.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
