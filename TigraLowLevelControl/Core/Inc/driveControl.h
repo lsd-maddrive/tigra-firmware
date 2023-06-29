@@ -16,6 +16,8 @@
 #define CURRENS_SENSOR_OFFSET 2048
 #define CURRENT_MEASURMENT_COUNT 10
 
+#define RESET_MODE 0 //0 - без режима ПАУЗА 1 - с режимом ПАУЗА
+
 typedef struct
 {
     int16_t angularSpeed;//Reference angular speed

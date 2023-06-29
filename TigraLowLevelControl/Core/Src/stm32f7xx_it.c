@@ -189,8 +189,9 @@ void EXTI1_IRQHandler(void)
   EXTI->PR |= EXTI_PR_PR1;
   //if(isEmergencyPressed())
   //{
-    
-    driveChangeState(FAIL);
+    #if RESET_MODE==1
+      driveChangeState(FAIL);
+    #endif
   //}
 
   //while(1);
