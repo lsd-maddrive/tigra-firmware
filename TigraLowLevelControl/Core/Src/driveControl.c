@@ -99,6 +99,8 @@ void speedControlProcess(void)
             setMotorPower((uint16_t)controlImpact);
             break;
         case FAIL:
+            brakeSetState(BRAKE_FORWARD,BRAKE_POWER);
+            setMotorPower(0);
             break;
     }
 }
@@ -130,7 +132,9 @@ void driveChangeState(Drive_state_t state)
     }
     else
     {
-        // sprintf(string,"FAIL CHANGE\n\r");  
+        sprintf(string,"FAIL CHANGE\n\r");  
+        driveState=FAIL;
+        HAL_GPIO_WritePin(EMERGANSY_BREAK_INDICATOR_GPIO_Port,EMERGANSY_BREAK_INDICATOR_Pin,0);
     }
     HAL_UART_Transmit(&huart3,&string,strlen(string),100);
 }
