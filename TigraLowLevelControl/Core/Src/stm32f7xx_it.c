@@ -187,7 +187,14 @@ void EXTI1_IRQHandler(void)
   //emergensyBrakeFlag=1;
   /* USER CODE END EXTI1_IRQn 0 */
   EXTI->PR |= EXTI_PR_PR1;
-  
+  //if(isEmergencyPressed())
+  //{
+    #if RESET_MODE==1
+      driveChangeState(FAIL);
+    #endif
+  //}
+
+  //while(1);
   // HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
   // /* USER CODE BEGIN EXTI1_IRQn 1 */
   // ledsToggle(LEDS_EMERGENSY);

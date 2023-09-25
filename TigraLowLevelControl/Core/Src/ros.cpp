@@ -51,8 +51,8 @@ void ROSReciveFeedback(const tigra_msgs::TigraState &msg)
     setReferenceSpeed((float)msg.rotation_speed*RAD_S_TO_RPM);
     //if(speed>=10 || speed<=-10)
     //{
-    if(angle>25) angle=25;
-    if(angle<-25) angle=-25;
+    if(angle>35) angle=35;
+    if(angle<-35) angle=-35;
 
     float filtered = steer_filter.getFiltered(angle);
 
