@@ -221,7 +221,6 @@ void EXTI2_IRQHandler(void)
   static uint8_t state=0;
   /* USER CODE END EXTI2_IRQn 0 */
   EXTI->PR |= EXTI_PR_PR2;
-  
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
   //ledsSet(LEDS_EMERGENSY,LEDS_OFF);
   /* USER CODE BEGIN EXTI2_IRQn 1 */
