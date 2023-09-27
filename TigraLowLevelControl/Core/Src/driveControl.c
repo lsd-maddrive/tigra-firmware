@@ -16,6 +16,10 @@ extern TIM_HandleTypeDef htim9;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart3;
 
+PDU_state_t pdu_state;
+
+PDU_state_t pdu_state_prev;
+
 PIDHandle_t SpeedPID=
   {
     .kp=30,//1.5
@@ -52,20 +56,33 @@ void speedControlProcess(void)
 {
     float controlImpact;
     float currentSpeed = getSpeed();
+   
+    if(getBrakeState()==BRAKE_FORWARD || fabs(currentSpeed)-fabs(refSpeed)>10)
+    {
+        HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,0);
+    }
+    else 
+    {
+        HAL_GPIO_WritePin(BREAK_DIRECTION_L_GPIO_Port,BREAK_DIRECTION_L_Pin,1);
+    }
+    
     switch(driveState)
     {
         case STOP:
             brakeSetState(BRAKE_FORWARD,BRAKE_POWER);
-            setMotorDirection(MOTOR_DIRECTION_FORWARD);
             setMotorPower(0);
-            if(currentSpeed>=0 && refSpeed>0)
+            if(getFilteredSpeed()>=0 && refSpeed>0)
             {
-                osDelay(50);
+                osDelay(200);
+                setMotorDirection(MOTOR_DIRECTION_FORWARD);
+                osDelay(200);
                 driveChangeState(RUN);
             }
-            else if(currentSpeed<=0 && refSpeed<0)
+            else if(getFilteredSpeed()<=0 && refSpeed<0)
             {
-                osDelay(500);
+                osDelay(200);
+                setMotorDirection(MOTOR_DIRECTION_BACKWARD);
+                osDelay(200);
                 driveChangeState(REVERS);
             }
             break;
@@ -74,13 +91,14 @@ void speedControlProcess(void)
             {
                 driveChangeState(STOP);
             }
-            setMotorDirection(MOTOR_DIRECTION_FORWARD);
+            //setMotorDirection(MOTOR_DIRECTION_FORWARD);
             brakeSetState(BRAKE_REALISE,BRAKE_POWER);
             controlImpact=PIDController(&SpeedPID,refSpeed-getFilteredSpeed());
             if(controlImpact<0)
                 controlImpact=0;
             else
                 controlImpact+=MOTOR_CONSTANT_OFFSET;
+            if(controlImpact>4000) controlImpact=4000;
             setMotorPower((uint16_t)controlImpact);
             break;
         case REVERS:
@@ -88,17 +106,19 @@ void speedControlProcess(void)
             {
                 driveChangeState(STOP);
             }
-            setMotorDirection(MOTOR_DIRECTION_BACKWARD);
+            //setMotorDirection(MOTOR_DIRECTION_BACKWARD);
             brakeSetState(BRAKE_REALISE,BRAKE_POWER);
-            controlImpact=PIDController(&SpeedPID,refSpeed-currentSpeed);
+            controlImpact=PIDController(&SpeedPID,refSpeed-getFilteredSpeed());
             if(controlImpact>0)
                 controlImpact=0;
             if(controlImpact<0)
                 controlImpact*=-1;
             controlImpact+=MOTOR_CONSTANT_OFFSET;
+            if(controlImpact>4000) controlImpact=4000;
             setMotorPower((uint16_t)controlImpact);
             break;
         case FAIL:
+        case PAUSE:
             brakeSetState(BRAKE_FORWARD,BRAKE_POWER);
             setMotorPower(0);
             break;
@@ -111,32 +131,46 @@ void driveChangeState(Drive_state_t state)
     if(driveState==STOP && state==RUN)
     {
         driveState=RUN;
-        sprintf(string,"STOP->RUN\n\r");      
+        printDebugMessage("STOP->RUN\n\r");      
     }
     else if(driveState==RUN && state==STOP)
     {
         PIDClear(&SpeedPID);
         driveState=STOP;
-        sprintf(string,"RUN->STOP\n\r");  
+        printDebugMessage("RUN->STOP\n\r");  
     }
     else if(driveState==STOP && state==REVERS)
     {
         driveState=REVERS;
-        sprintf(string,"STOP->REVERS\n\r");  
+        printDebugMessage("STOP->REVERS\n\r");  
     }
     else if(driveState==REVERS && state==STOP)
     {
         PIDClear(&SpeedPID);
         driveState=STOP;
-        sprintf(string,"REVERS->STOP\n\r");  
+        printDebugMessage("REVERS->STOP\n\r");  
     }
-    else
+    else if(driveState==PAUSE && state==STOP)
     {
-        sprintf(string,"FAIL CHANGE\n\r");  
+        PIDClear(&SpeedPID);
+        driveState=STOP;
+        printDebugMessage("PAUSE->STOP\n\r");  
+    }
+    else if(state==FAIL)
+    {
+        PIDClear(&SpeedPID);
+        printDebugMessage("FAIL STATE\n\r");  
         driveState=FAIL;
         HAL_GPIO_WritePin(EMERGANSY_BREAK_INDICATOR_GPIO_Port,EMERGANSY_BREAK_INDICATOR_Pin,0);
     }
-    HAL_UART_Transmit(&huart3,&string,strlen(string),100);
+    else if(state==PAUSE)
+    {
+        PIDClear(&SpeedPID);
+        printDebugMessage("PAUSE STATE\n\r");  
+        driveState=PAUSE;
+        HAL_GPIO_WritePin(EMERGANSY_BREAK_INDICATOR_GPIO_Port,EMERGANSY_BREAK_INDICATOR_Pin,1);
+    }
+    //HAL_UART_Transmit(&huart3,string,strlen(string),100);
 }
 
 /**
@@ -182,11 +216,11 @@ void setMotorDirection(Motor_direction_t direction)
 {
     if(direction==MOTOR_DIRECTION_FORWARD)
     {
-        HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
+        HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
     }
     else if(direction==MOTOR_DIRECTION_BACKWARD)
     {
-        HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
+        HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
     }
 }
 
@@ -223,14 +257,44 @@ int8_t getAngle(void)
  */
 void sendReferenceAngle(float refAngle)
 {
+    uint8_t str[10];
     int8_t angle = (int8_t)refAngle;
-    HAL_UART_Transmit(&huart1,&angle,sizeof(int8_t),100);
+    currentAngle = angle;//Заглушка для включения поворотников по текущему углу
+    if(angle>=0)
+    {
+        sprintf(str,"+:%d\n\r",angle);
+    }
+    else
+    {
+        sprintf(str,"-:%d\n\r",-1*angle);
+    }
+    HAL_UART_Transmit(&huart1,&str,strlen(str),100);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
+    
     if(huart==&huart1)
     {
-        reciveAngle(uartByte);
+        pdu_state = USART1->RDR;
+    if(pdu_state_prev!=pdu_state)
+    {
+        switch (pdu_state)
+        {
+            case HALT:
+                driveChangeState(FAIL);
+                break;
+            case RED:
+            case YELLOW:
+                driveChangeState(PAUSE);
+                break;
+            case GREEN:
+                driveChangeState(STOP);
+                break;
+            default:
+                break;
+        }
+    }
+    pdu_state_prev=pdu_state;
     }
 }

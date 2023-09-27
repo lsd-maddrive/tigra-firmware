@@ -58,12 +58,13 @@ void testProcess(void)
     {
         counter2=0;
         sprintf(string,"Current angle:%d\n\r",getAngle());
-        HAL_UART_Transmit(&huart3,&string,strlen(string),100);
+        //HAL_UART_Transmit(&huart3,&string,strlen(string),100);
     } 
     else
         counter2++;
 #endif
-    osDelay(20);
+ //HAL_UART_Transmit(&huart1,"+0\r\n",6,100);
+    osDelay(2);
 }
 
 /**
@@ -97,38 +98,33 @@ void driveTest(void)
     uint16_t j;
     static uint8_t state=0;
     static uint8_t str[10];
+    uint8_t string[20];
     uint32_t DACValue=0;
     static uint8_t dir;
     HAL_StatusTypeDef reciveStatus;
-    reciveStatus=HAL_UART_Receive(&huart3,&i,1,1);
-    str[state]=i;
-    if((str[state]=='F' || str[state]=='B') && state==0)
+    reciveStatus=HAL_UART_Receive(&huart3,&str,7,500);
+    if(reciveStatus==HAL_OK)
     {
-        HAL_UART_Transmit(&huart3,"Print DAC value\n\r",17,100); 
-        if(str[state]=='B')
-        {
-            dir=1;
-        }
-        if(str[state]=='F')
-        {
-            dir=0;
-        }
-        state++;
-    }
-    else
-    {
-        if(state>0 && reciveStatus==HAL_OK)
-        {
-            state++;
-            if((str[state-1]>=0x30 && str[state-1]<=0x39) || str[state-1]=='\r' || str[state-1]=='\n')
+            if(str[0]=='+' || str[0]=='-')
             {
-                if(str[state-1]=='\r')
+                if(str[0]=='-')
+            {
+                dir=1;
+            }
+            if(str[0]=='+')
+            {
+                dir=0;
+            }
+                DACValue+=(str[1]-48)*1000;
+                DACValue+=(str[2]-48)*100;
+                DACValue+=(str[3]-48)*10;
+                DACValue+=(str[4]-48);
+                state=0;
+                if(DACValue>4096)
+                    HAL_UART_Transmit(&huart3,"Incorrect value\n\r",17,100); 
+                else
                 {
-                    for(j=state-1;j>1;j--)
-                    {
-                        DACValue+=(str[j-1]-48)*powINT(10,state-1-j);
-                    }
-                    state=0;
+                    
 #if TEST_SPEED_CONRTOL_SYSTEM
                     if(DACValue>SPEED_MAX_VALUE) 
                     { 
@@ -153,34 +149,79 @@ void driveTest(void)
                     {
                         HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)DACValue);
                         HAL_DAC_Start(&hdac,DAC_CHANNEL_1);
-                        HAL_UART_Transmit(&huart3,"Value set\n\r",15,100); 
                     }
 #endif
+                    sprintf(string,"Set:%d\n\r",DACValue);
+                    HAL_UART_Transmit(&huart3,string,strlen(string),100); 
                 }
-            }
-            else
-            {
-                state=0;
-                HAL_UART_Transmit(&huart3,"Incorrect symbol\n\r",18,100); 
-            }
         }
     }
+//     else
+//     {
+//         if(state>0 && reciveStatus==HAL_OK)
+//         {
+//             state++;
+//             if((str[state-1]>=0x30 && str[state-1]<=0x39) || str[state-1]=='\r' || str[state-1]=='\n')
+//             {
+//                 if(str[state-1]=='\r')
+//                 {
+//                     for(j=state-1;j>1;j--)
+//                     {
+//                         DACValue+=(str[j-1]-48)*powINT(10,state-1-j);
+//                     }
+//                     state=0;
+// #if TEST_SPEED_CONRTOL_SYSTEM
+//                     if(DACValue>SPEED_MAX_VALUE) 
+//                     { 
+//                         HAL_UART_Transmit(&huart3,"Incorrect value\n\r",17,100);   
+//                     }
+//                     else
+//                     {   
+//                         if(dir==1)
+//                             setReferenceSpeed((float)-1*DACValue);
+//                         else   
+//                             setReferenceSpeed(DACValue);
+//                         HAL_UART_Transmit(&huart3,"Value set\n\r",15,100);  
+//                     }
+// #else
+//                     if(dir==1)
+//                         HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,0);
+//                     else
+//                         HAL_GPIO_WritePin(DRIVE_REVERSE_GPIO_Port,DRIVE_REVERSE_Pin,1);
+//                     if(DACValue>4095)
+//                         HAL_UART_Transmit(&huart3,"Incorrect value\n\r",17,100); 
+//                     else
+//                     {
+//                         HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)DACValue);
+//                         HAL_DAC_Start(&hdac,DAC_CHANNEL_1);
+//                         HAL_UART_Transmit(&huart3,"Value set\n\r",15,100); 
+//                     }
+// #endif
+//                 }
+//             }
+//             else
+//             {
+//                 state=0;
+//                 HAL_UART_Transmit(&huart3,"Incorrect symbol\n\r",18,100); 
+//             }
+//         }
+//     }
 
 }
 
 void breakTest()
 {
-    uint8_t symb;
+    uint8_t symb[3];
     static uint16_t counter=0;
     float currentAmp;
     uint8_t string[100];
-    HAL_UART_Receive(&huart3,&symb,1,1);
-    if(symb=='B')
+    HAL_UART_Receive(&huart3,symb,3,100);
+    if(symb[0]=='B')
     {
         HAL_UART_Transmit(&huart3,"Break\n\r",7,100);
         brakeSetState(BRAKE_FORWARD,BRAKE_POWER);
     }
-    if(symb=='R')
+    if(symb[0]=='R')
     {
         if(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_0)==1)
         {
@@ -188,7 +229,7 @@ void breakTest()
             brakeSetState(BRAKE_REALISE,BRAKE_POWER);
         }
     }
-    if(symb=='S')
+    if(symb[0]=='S')
     {
         HAL_UART_Transmit(&huart3,"Break stop\n\r",12,100);
         brakeSetState(BRAKE_STOP,0);
@@ -199,40 +240,28 @@ void rudderCommunicationTest(void)
 {
     uint8_t i;
     uint16_t j;
+    uint8_t string[20];
     static uint8_t state=0;
     static uint8_t str[10];
     uint8_t rotateAngle=0;
     int8_t sendAngle;
     static uint8_t dir;
     HAL_StatusTypeDef reciveStatus;
-    reciveStatus=HAL_UART_Receive(&huart3,&i,1,1);
-    str[state]=i;  
-    if((str[state]=='+' || str[state]=='-') && state==0)
+    reciveStatus=HAL_UART_Receive(&huart3,&str,5,100);
+    if(reciveStatus==HAL_OK)
     {
-        HAL_UART_Transmit(&huart3,"Print rotate angle\n\r",17,100); 
-        if(str[state]=='-')
-        {
-            dir=1;
-        }
-        if(str[state]=='+')
-        {
-            dir=0;
-        }
-        state++;
-    }  
-    else
-    {
-    if(state>0 && reciveStatus==HAL_OK)
-    {
-        state++;
-        if((str[state-1]>=0x30 && str[state-1]<=0x39) || str[state-1]=='\r' || str[state-1]=='\n')
-        {
-            if(str[state-1]=='\r')
+            if(str[0]=='+' || str[0]=='-')
             {
-                for(j=state-1;j>1;j--)
-                {
-                    rotateAngle+=(str[j-1]-48)*powINT(10,state-1-j);
-                }
+                if(str[0]=='-')
+            {
+                dir=1;
+            }
+            if(str[0]=='+')
+            {
+                dir=0;
+            }
+                rotateAngle+=(str[1]-48)*10;
+                rotateAngle+=(str[2]-48);
                 state=0;
                 if(rotateAngle>127)
                     HAL_UART_Transmit(&huart3,"Incorrect value\n\r",17,100); 
@@ -241,16 +270,11 @@ void rudderCommunicationTest(void)
                     sendAngle=(int8_t)rotateAngle;
                     if(dir==1)
                         sendAngle*=-1;
-                    HAL_UART_Transmit(&huart1,&sendAngle,sizeof(int8_t),100);
-                    HAL_UART_Transmit(&huart3,"Value set\n\r",15,100); 
+                    HAL_UART_Transmit(&huart1,str,5,100);
+                    //HAL_UART_Transmit(&huart1,"\r\n",2,100);
+                    sprintf(string,"Set:%d\n\r",rotateAngle);
+                    HAL_UART_Transmit(&huart3,string,strlen(string),100); 
                 }
-            }
-        }
-        else
-        {
-            state=0;
-            HAL_UART_Transmit(&huart3,"Incorrect symbol\n\r",18,100); 
         }
     }
-}
 }

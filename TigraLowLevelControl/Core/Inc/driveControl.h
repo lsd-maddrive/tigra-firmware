@@ -27,9 +27,19 @@ driveData_t;
 
 typedef enum
 {
+    HALT=0,
+    RED=1,
+    YELLOW=2,
+    GREEN=3,
+    LORA_ERROR=10
+}PDU_state_t;
+
+typedef enum
+{
     STOP,
     RUN,
     REVERS,
+    PAUSE,
     FAIL
 }Drive_state_t;
 

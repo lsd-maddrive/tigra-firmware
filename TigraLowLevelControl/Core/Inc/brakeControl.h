@@ -27,4 +27,5 @@ void brakeSetState(Brake_state_t direction,uint16_t power);
  */
 void brakeRealise(void);
 
+Brake_state_t getBrakeState();
 #endif

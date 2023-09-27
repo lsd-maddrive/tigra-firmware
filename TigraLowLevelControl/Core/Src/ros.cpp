@@ -51,8 +51,8 @@ void ROSReciveFeedback(const tigra_msgs::TigraState &msg)
     setReferenceSpeed((float)msg.rotation_speed*RAD_S_TO_RPM);
     //if(speed>=10 || speed<=-10)
     //{
-    if(angle>35) angle=35;
-    if(angle<-35) angle=-35;
+    if(angle>20) angle=20;
+    if(angle<-20) angle=-20;
 
     float filtered = steer_filter.getFiltered(angle);
 
@@ -62,8 +62,8 @@ void ROSReciveFeedback(const tigra_msgs::TigraState &msg)
     }*/
 
     sendReferenceAngle(filtered);
-    sprintf(str,"ROS Speed:%d Angle:%d\n\r",(int)msg.rotation_speed,(int)filtered);     
-    printDebugMessage((uint8_t*)str);
+    sprintf(str,"ROS Speed:%2.2f Angle:%d\n\r",msg.rotation_speed,(int)filtered);     
+    //printDebugMessage((uint8_t*)str);
     //}
     reciveWachdog=0;
 }
