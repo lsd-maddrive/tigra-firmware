@@ -36,7 +36,8 @@ void testProcess(void)
 {
     static uint16_t counter1;
     static uint16_t counter2;
-    uint8_t string[20];
+    static uint16_t logCounter=0;
+    uint8_t string[50];
 #if ENCODER_TEST
     if(counter1>50)
     {
@@ -62,6 +63,15 @@ void testProcess(void)
     } 
     else
         counter2++;
+#endif
+#if LOG_EN
+    logCounter++;
+    if(logCounter>100)
+    {
+        sprintf(string,"Current speed:%d\n\r",getSpeed());    
+        printDebugMessage(string);
+        logCounter=0;
+    }
 #endif
  //HAL_UART_Transmit(&huart1,"+0\r\n",6,100);
     osDelay(2);

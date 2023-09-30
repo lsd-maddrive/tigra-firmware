@@ -92,7 +92,7 @@ void speedControlProcess(void)
                 driveChangeState(STOP);
             }
             //setMotorDirection(MOTOR_DIRECTION_FORWARD);
-            brakeSetState(BRAKE_REALISE,BRAKE_POWER);
+            brakeSetState(BRAKE_REALISE,BRAKE_POWER)    ;
             controlImpact=PIDController(&SpeedPID,refSpeed-getFilteredSpeed());
             if(controlImpact<0)
                 controlImpact=0;

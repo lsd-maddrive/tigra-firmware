@@ -6,8 +6,8 @@
 #define TEST_SPEED_CONRTOL_SYSTEM 0
 #define BREAK_TEST 0
 #define RUDDER_COMMUNICATION_TEST 0
-
-
+#define LOG_EN 1
+  
 #include "stm32f7xx_hal.h"
 #include "speedMeasure.h"
 #include "driveControl.h"
