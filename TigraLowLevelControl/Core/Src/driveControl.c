@@ -1,6 +1,6 @@
 #include "driveControl.h"
 
-Drive_state_t driveState = STOP;
+Drive_state_t driveState = PAUSE;
 
 static brakeStatus_t breakFlag=NO_BREAK;
 static float refSpeed=0;
@@ -69,20 +69,17 @@ void speedControlProcess(void)
     switch(driveState)
     {
         case STOP:
+            setMotorDirection(MOTOR_DIRECTION_FORWARD);
             brakeSetState(BRAKE_FORWARD,BRAKE_POWER);
             setMotorPower(0);
-            if(getFilteredSpeed()>=0 && refSpeed>0)
-            {
-                osDelay(200);
-                setMotorDirection(MOTOR_DIRECTION_FORWARD);
-                osDelay(200);
+            if(currentSpeed>=0 && refSpeed>0)
+            { 
+                osDelay(50);
                 driveChangeState(RUN);
             }
-            else if(getFilteredSpeed()<=0 && refSpeed<0)
+            else if(currentSpeed<=0 && refSpeed<0)
             {
-                osDelay(200);
-                setMotorDirection(MOTOR_DIRECTION_BACKWARD);
-                osDelay(200);
+                osDelay(500);
                 driveChangeState(REVERS);
             }
             break;
@@ -91,9 +88,9 @@ void speedControlProcess(void)
             {
                 driveChangeState(STOP);
             }
-            //setMotorDirection(MOTOR_DIRECTION_FORWARD);
+            setMotorDirection(MOTOR_DIRECTION_FORWARD);
             brakeSetState(BRAKE_REALISE,BRAKE_POWER);
-            controlImpact=PIDController(&SpeedPID,refSpeed-getFilteredSpeed());
+            controlImpact=PIDController(&SpeedPID,refSpeed-currentSpeed);
             if(controlImpact<0)
                 controlImpact=0;
             else
@@ -106,9 +103,9 @@ void speedControlProcess(void)
             {
                 driveChangeState(STOP);
             }
-            //setMotorDirection(MOTOR_DIRECTION_BACKWARD);
+            setMotorDirection(MOTOR_DIRECTION_BACKWARD);
             brakeSetState(BRAKE_REALISE,BRAKE_POWER);
-            controlImpact=PIDController(&SpeedPID,refSpeed-getFilteredSpeed());
+            controlImpact=PIDController(&SpeedPID,refSpeed-currentSpeed);
             if(controlImpact>0)
                 controlImpact=0;
             if(controlImpact<0)
@@ -259,7 +256,7 @@ void sendReferenceAngle(float refAngle)
 {
     uint8_t str[10];
     int8_t angle = (int8_t)refAngle;
-    currentAngle = angle;//Заглушка для включения поворотников по текущему углу
+    currentAngle = angle+3;//Заглушка для включения поворотников по текущему углу
     if(angle>=0)
     {
         sprintf(str,"+:%d\n\r",angle);
