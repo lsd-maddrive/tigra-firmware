@@ -1,0 +1,16 @@
+{
+    "cortex-debug.JLinkGDBServerPath": "C:/Program Files/SEGGER/JLink/JLinkGDBServerCL.exe",
+    "cortex-debug.armToolchainPath": "C:/work/arm/xpack-arm-none-eabi-gcc-9.2.1-1.1/bin",
+    "cmake.configureOnOpen": false,
+    "files.associations": {
+        "ethernetif.h": "c",
+        "netif.h": "c",
+        "main.h": "c",
+        "ethernetconf.h": "c",
+        "math.h": "c",
+        "drivecontrol.h": "c",
+        "speedmeasure.h": "c",
+        "stdlib.h": "c",
+        "string.h": "c"
+    },
+}

@@ -1,0 +1,31 @@
+{
+    "configurations": [
+        {
+            "name": "arm_c_cpp_properties",
+            "compilerPath": "C:/work/arm/xpack-arm-none-eabi-gcc-9.2.1-1.1/bin/arm-none-eabi-gcc.exe",
+            "includePath": [
+                "C:/work/arm/xpack-arm-none-eabi-gcc-9.2.1-1.1/arm-none-eabi/include",
+                "C:/work/arm/xpack-arm-none-eabi-gcc-9.2.1-1.1/arm-none-eabi/include/**",
+                "C:/work/arm/xpack-arm-none-eabi-gcc-9.2.1-1.1/arm-none-eabi/include/sys",
+                "C:/work/arm/xpack-arm-none-eabi-gcc-9.2.1-1.1/lib/**",
+                "${workspaceRoot}\\Drivers\\**",
+                "${workspaceRoot}/Core/Src/",
+                "${workspaceRoot}/Core/Inc/",
+                "${workspaceRoot}/Middlewares/Third_Party/FreeRTOS/**",
+                "${workspaceRoot}/Middlewares/Third_Party/lwip/**",
+                "${workspaceFolder}/Middlewares/Third_Party/FreeRTOS/Source/include",
+                "${workspaceRoot}\\ros_lib\\**"
+            ],
+            "defines": [
+                "USE_HAL_DRIVER",
+                "STM32F767xx",
+                "M7",
+                "GCC_ARMCM4"
+            ],
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x64"
+        }
+    ],
+    "version": 4
+}
