@@ -39,7 +39,7 @@ private:
     float m_memory;
 };
 
-AlphaFilter steer_filter(0.4);
+AlphaFilter steer_filter(1);
 
 void ROSReciveFeedback(const tigra_msgs::TigraState &msg)
 {

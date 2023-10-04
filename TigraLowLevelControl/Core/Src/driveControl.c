@@ -88,15 +88,24 @@ void speedControlProcess(void)
             {
                 driveChangeState(STOP);
             }
-            setMotorDirection(MOTOR_DIRECTION_FORWARD);
-            brakeSetState(BRAKE_REALISE,BRAKE_POWER);
-            controlImpact=PIDController(&SpeedPID,refSpeed-currentSpeed);
-            if(controlImpact<0)
-                controlImpact=0;
+            if(fabs(currentSpeed)-fabs(refSpeed)>20)
+            {
+                brakeSetState(BRAKE_FORWARD,BRAKE_POWER);
+                PIDClear(&SpeedPID);
+                setMotorPower(0);
+            }
             else
-                controlImpact+=MOTOR_CONSTANT_OFFSET;
-            if(controlImpact>4000) controlImpact=4000;
-            setMotorPower((uint16_t)controlImpact);
+            {
+                setMotorDirection(MOTOR_DIRECTION_FORWARD);
+                brakeSetState(BRAKE_REALISE,BRAKE_POWER);
+                controlImpact=PIDController(&SpeedPID,refSpeed-currentSpeed);
+                if(controlImpact<0)
+                    controlImpact=0;
+                else
+                    controlImpact+=MOTOR_CONSTANT_OFFSET;
+                if(controlImpact>4000) controlImpact=4000;
+                setMotorPower((uint16_t)controlImpact);
+            }     
             break;
         case REVERS:
             if(refSpeed>=0)
@@ -256,7 +265,7 @@ void sendReferenceAngle(float refAngle)
 {
     uint8_t str[10];
     int8_t angle = (int8_t)refAngle;
-    currentAngle = angle+3;//Заглушка для включения поворотников по текущему углу
+    currentAngle = angle;//Заглушка для включения поворотников по текущему углу
     if(angle>=0)
     {
         sprintf(str,"+:%d\n\r",angle);
